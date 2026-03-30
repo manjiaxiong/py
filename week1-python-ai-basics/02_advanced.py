@@ -192,6 +192,8 @@ class ChatMessage:
         self.timestamp = timestamp
 
     def format(self) -> str:
+        if not isinstance(self.timestamp, datetime):
+            return TypeError("timestamp 必须是 datetime 对象")
         time_str = self.timestamp.strftime("%Y-%m-%d %H:%M:%S")
         return f"[{time_str}] {self.role}: {self.content}"
 
@@ -200,13 +202,25 @@ print(chat.format())
 # TODO 2: 写一个异步函数 fetch_multiple，接收一个 URL 列表(字符串列表)
 # 对每个 URL 模拟 0.5s 延迟获取，最后并行返回所有结果
 async def fetch_multiple(urls: list[str]) -> list[str]:
-    pass  # 替换为你的代码
+    async def fetch(url: str) -> str:
+        print(f"开始获取 {url} ...")
+        await asyncio.sleep(0.5)  # 模拟网络延迟
+        return f"{url} 的数据"
 
+    tasks = [fetch(url) for url in urls]
+    results = await asyncio.gather(*tasks)
+    return results
 
+# asyncio.run(fetch_multiple(["https://api.example.com/users", "https://api.example.com/orders"]))
+asyncio.run(fetch_multiple(["https://api.example.com/users", "https://api.example.com/orders"]))
 # TODO 3: 写一个函数 safe_parse_json
 # 接收一个字符串，尝试解析为 JSON，失败返回 None
 def safe_parse_json(text: str) -> Optional[dict]:
-    pass  # 替换为你的代码
+    try:
+        return json.loads(text)
+    except Exception as e:
+        print(f"无效的 JSON 字符串: {e}")
+        return None
 
 
 # 取消注释测试：
