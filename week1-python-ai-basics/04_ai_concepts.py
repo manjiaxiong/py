@@ -97,7 +97,7 @@ def temperature_experiment():
             text = ""
             for block in message.content:
                 if block.type == "text":
-                    text = block.text.strip()
+                    text += block.text.strip()
             print(f"  第{i+1}次: {text}")
 
         print()
@@ -127,7 +127,7 @@ def max_tokens_experiment():
         text = ""
         for block in message.content:
             if block.type == "text":
-                text = block.text
+                text += block.text
 
         print(f"--- max_tokens = {max_t} ---")
         print(f"  停止原因: {message.stop_reason}")  # "end_turn"=正常结束, "max_tokens"=被截断
@@ -300,9 +300,10 @@ def find_best_temperature(question: str, options=None):
             messages=[{"role": "user", "content": question}]
         )
         text = ""
-        for block in message.content:
+        for (index, block) in enumerate(message.content):
+            print(f"block: {block}{index}")
             if block.type == "text":
-                text = block.text.strip()
+                text += block.text.strip()
         print(f"  回答: {text}")
         print()
 find_best_temperature("给变量取名：存储用户最后登录时间")
