@@ -6,7 +6,7 @@
 2. **pip 包管理** — 等价于 npm/yarn
 3. **requirements.txt** — 等价于 package.json 的 dependencies
 4. **环境变量与 .env** — 安全管理 API Key
-5. **调用 AI API** — 用 httpx 和官方 SDK 两种方式调用 Claude API
+5. **调用 AI API** — 用 httpx 和 OpenAI SDK 调用 MiniMax API
 
 ## npm vs pip 速查
 
@@ -21,10 +21,18 @@
 | 全局安装 | `npm install -g` | `pip install`（不在 venv 中时） |
 | 运行脚本 | `npm run dev` | `python main.py` |
 
+## MiniMax API 要点
+
+- MiniMax 兼容 OpenAI 接口格式，可以直接用 `openai` Python SDK
+- API 地址：`https://api.minimax.chat/v1`
+- 模型：`MiniMax-Text-01`（最新文本模型）
+- 获取 API Key：https://platform.minimaxi.com/user-center/basic-information/interface-key
+
 ## 注意事项
 
 - **必须激活虚拟环境**：安装包前先 `activate`，否则会装到全局 Python
 - **永远不要把 .env 提交到 git**：API Key 泄露会被盗用产生费用
 - **requirements.txt 要及时更新**：每次装新包后 `pip freeze > requirements.txt`
-- **API 调用有费用**：Claude/OpenAI API 按 token 计费，学习阶段用短 prompt 控制成本
+- **API 调用有费用**：MiniMax API 按 token 计费，学习阶段用短 prompt 控制成本
 - **流式输出是重点**：后面做 AI 应用必须掌握 stream 模式，用户体验差别巨大
+- **OpenAI 兼容格式是行业标准**：大多数国产大模型都兼容这个格式，学会一个等于学会一片

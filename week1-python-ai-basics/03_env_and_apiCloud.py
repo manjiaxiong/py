@@ -1,5 +1,5 @@
 # ===========================================
-# Day 3: 虚拟环境 + pip + 第一次调用 AI API (MiniMax Anthropic 兼容)
+# Day 3: 虚拟环境 + pip + 第一次调用 AI API (Claude Anthropic 兼容)
 # ===========================================
 #
 # 运行本文件前，请先完成以下步骤：
@@ -27,7 +27,7 @@
 # 【第三步：创建 .env 文件】
 #
 #   在 week1-python-ai-basics 文件夹下创建 .env 文件，写入：
-#   MINIMAX_API_KEY=你的 MiniMax Key
+#   MINIMAX_API_KEY=你的 Claude Key
 #
 # ===========================================
 
@@ -42,16 +42,16 @@ from dotenv import load_dotenv
 # 加载 .env 文件中的环境变量
 load_dotenv()
 
-api_key = os.getenv("MINIMAX_API_KEY")
-base_url = os.getenv("MINIMAX_ANTHROPIC_BASE_URL", "https://api.minimaxi.com/anthropic")
+api_key = os.getenv("ANTHROPIC_API_KEY")
+base_url = os.getenv("ANTHROPIC_BASE_URL")
+model_name = os.getenv("MODEL_NAME", "claude-opus-4-6")
 if not api_key:
-    print("⚠ 未找到 MINIMAX_API_KEY，请检查 .env 文件")
-    print("  在当前目录创建 .env 文件，写入: MINIMAX_API_KEY=你的 MiniMax Key")
+    print("⚠ 未找到 ANTHROPIC_API_KEY，请检查 .env 文件")
     exit(1)
 
 # 安全地打印 key（只显示前10位）
 print(f"API Key 已加载: {api_key[:10]}...")
-print(f"Anthropic 兼容接口: {base_url}")
+print(f"API 接口: {base_url}")
 
 
 # ----- 2. 用 httpx 直接调用 API（理解 HTTP 层） -----
@@ -62,7 +62,7 @@ import httpx
 import anthropic
 
 def call_claude_raw():
-    """用 httpx 直接发 HTTP 请求调用 MiniMax Anthropic 兼容接口 — 理解底层原理"""
+    """用 httpx 直接发 HTTP 请求调用 API — 理解底层原理"""
 
     url = f"{base_url}/v1/messages"
 
@@ -74,7 +74,7 @@ def call_claude_raw():
 
     # 请求体 — 类似前端发 POST 请求
     body = {
-        "model": "MiniMax-M2.7",
+        "model": model_name,
         "max_tokens": 200,
         "system": "你是一个帮助前端工程师学习 Python 的助手，回答简洁。",
         "messages": [
@@ -97,7 +97,7 @@ def call_claude_raw():
 
     if response.status_code == 200:
         data = response.json()
-        print_message_blocks(data["content"], "MiniMax")
+        print_message_blocks(data["content"], "Claude")
         print(f"\nToken 使用: 输入 {data['usage']['input_tokens']}, 输出 {data['usage']['output_tokens']}")
     else:
         print(f"请求失败: {response.status_code}")
@@ -108,13 +108,13 @@ def call_claude_raw():
 # SDK 帮你处理了认证、重试、类型等
 
 def create_client():
-    """创建一个指向 MiniMax Anthropic 兼容接口的 Anthropic 客户端"""
+    """创建 Anthropic 客户端（通过 UCloud 中转）"""
     return anthropic.Anthropic(
         api_key=api_key,
         base_url=base_url
     )
 
-def print_message_blocks(blocks, label="MiniMax"):
+def print_message_blocks(blocks, label="Claude"):
     """处理 httpx 返回的内容块"""
     for block in blocks:
         if block["type"] == "thinking":
@@ -122,7 +122,7 @@ def print_message_blocks(blocks, label="MiniMax"):
         elif block["type"] == "text":
             print(f"{label} Text:\n{block['text']}\n")
 
-def print_sdk_message(message, label="MiniMax"):
+def print_sdk_message(message, label="Claude"):
     """处理 Anthropic SDK 返回的内容块"""
     for block in message.content:
         if block.type == "thinking":
@@ -140,7 +140,7 @@ def call_claude_sdk():
     print("\n=== 方式二：官方 SDK 调用 ===")
 
     message = client.messages.create(
-        model="MiniMax-M2.7",
+        model=model_name,
         max_tokens=200,
         system="You are a helpful assistant.",
         messages=[
@@ -173,7 +173,7 @@ def call_with_system_prompt():
     print("\n=== System Prompt 示例 ===")
 
     message = client.messages.create(
-        model="MiniMax-M2.7",
+        model=model_name,
         max_tokens=300,
         system="你是一个专门帮助前端工程师学习 Python 的导师。回答要简洁，多用 JS 对比。",
         messages=[
@@ -226,7 +226,7 @@ def multi_turn_chat():
     ]
 
     message = client.messages.create(
-        model="MiniMax-M2.7",
+        model=model_name,
         max_tokens=300,
         messages=messages
     )
@@ -261,11 +261,11 @@ def stream_chat():
         messages.append({"role": "user", "content": user_input})
 
         try:
-            print("MiniMax: ", end="", flush=True)
+            print("Claude: ", end="", flush=True)
 
             # stream=True 开启流式
             with client.messages.stream(
-                model="MiniMax-M2.7",
+                model=model_name,
                 max_tokens=200,
                 messages=messages
             ) as stream:
@@ -282,7 +282,7 @@ def stream_chat():
             print(f"\n请求出错: {e}")
             messages.pop()  # 移除刚才添加的 user 消息，避免污染对话历史
 
-stream_chat()
+# stream_chat()
 
 
 # ===========================================
@@ -297,7 +297,7 @@ def ask_claude(question: str) -> str:
     client = create_client()
     
     message = client.messages.create(
-        model="MiniMax-M2.7",
+        model=model_name,
         max_tokens=100,
         system="用中文简洁回答，50字以内。",
         messages=[
@@ -325,7 +325,7 @@ def ask_claude(question: str) -> str:
 def chat_bot():
     client = create_client()
     messages = []
-    print("=== MiniMax 聊天机器人 ===")
+    print("=== Claude 聊天机器人 ===")
     print("输入 'quit' 退出\n")
     while True:
         user_input = input("你: ").strip()
@@ -338,9 +338,9 @@ def chat_bot():
         messages.append({"role": "user", "content": user_input})
 
         try:
-            print("MiniMax: ", end="", flush=True)
+            print("Claude: ", end="", flush=True)
             with client.messages.stream(
-                model="MiniMax-M2.7",
+                model=model_name,
                 max_tokens=200,
                 messages=messages
             ) as stream:
@@ -358,4 +358,4 @@ def chat_bot():
 
 # 取消注释测试:
 # print(ask_claude("Python 的 GIL 是什么？"))
-# chat_bot()
+chat_bot()
