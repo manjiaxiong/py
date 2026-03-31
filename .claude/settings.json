@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python week1-python-ai-basics/05_chatbot.py)",
+      "Bash(python 05_chatbot.py)",
+      "Bash(python -m build week1-python-ai-basics)",
+      "Bash(.venv/Scripts/python -m build week1-python-ai-basics)",
+      "Bash(.venv/Scripts/pip install:*)",
+      "Bash(.venv/Scripts/ai-chatbot.exe)",
+      "Bash(d:/code/py/.venv/Scripts/ai-chatbot.exe)",
+      "Bash(d:/code/py/.venv/Scripts/python -c \"from dotenv import load_dotenv; import os; load_dotenv\\(\\); print\\(os.getenv\\(''MINIMAX_API_KEY'', ''NOT FOUND''\\)\\)\")",
+      "Bash(d:/code/py/.venv/Scripts/python -c \":*)",
+      "Bash(d:/code/py/.venv/Scripts/python -m chatbot)",
+      "Bash(d:/code/py/.venv/Scripts/python -c \"from chatbot.__main__ import main; main\\(\\)\")"
+    ],
+    "additionalDirectories": [
+      "d:\\code\\py\\week1-python-ai-basics"
+    ]
+  }
+}
