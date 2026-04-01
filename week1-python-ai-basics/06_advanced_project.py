@@ -160,7 +160,7 @@ def explain_code(file_path: str) -> str:
 
 
 # 解释 Day 1 的代码
-explain_code("week1-python-ai-basics/chatbot/config.py")
+# explain_code("week1-python-ai-basics/chatbot/config.py")
 
 
 # ===========================================
@@ -205,6 +205,7 @@ async def batch_translate(texts: list[str], target_lang: str = "English"):
     print(f"  总耗时: {elapsed:.2f}s（并行执行，不是串行！）\n")
 
     for r in results:
+        print(f"  翻译结果: {r}")
         print(f"  原文: {r['original']}")
         print(f"  译文: {r['translated']}\n")
 
@@ -305,9 +306,47 @@ def get_project_files(directory: str) -> list:
 # - 类比前端: useMemo / React.memo
 # - 提示: 用 dict 存储 {参数: 结果}
 def cache(func):
-    pass  # 替换为你的代码
+    """
+    缓存装饰器 — 相同参数不重复调用
+    类比前端: useMemo / React.memo
+    """
+    cached_results = {}  # {参数: 结果}
 
+    def make_hashable(value):
+        """把 dict/list/set 等可变对象递归转成可哈希结构。"""
+        if isinstance(value, dict):
+            return tuple(sorted((k, make_hashable(v)) for k, v in value.items()))
+        if isinstance(value, (list, tuple)):
+            return tuple(make_hashable(item) for item in value)
+        if isinstance(value, set):
+            return tuple(sorted(make_hashable(item) for item in value))
+        return value
 
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        # 把参数转成可哈希的 key
+        key = (
+            tuple(make_hashable(arg) for arg in args),
+            tuple(sorted((k, make_hashable(v)) for k, v in kwargs.items()))
+        )
+
+        if key in cached_results:
+            print(f"  [缓存命中] {func.__name__}{args}")
+            return cached_results[key]
+
+        print(f"  [首次调用] {func.__name__}{args}")
+        result = func(*args, **kwargs)
+        cached_results[key] = result
+        return result
+
+    return wrapper
+
+@cache
+def test(a, b, c=1):
+    print("计算中...")
+    return {"a": a, "b": b, "c": c}
+test(1, { "a": 324 }, c=3)  # 首次调用，耗时
+test(1, { "a": 324 }, c=3)  # 缓存命中，快速返回
 # TODO 2: 写一个 code_reviewer 函数
 # - 读取一个 .py 文件
 # - 让 AI 以 JSON 格式返回 code review 结果:
