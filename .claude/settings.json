@@ -12,7 +12,11 @@
       "Bash(d:/code/py/.venv/Scripts/python -c \":*)",
       "Bash(d:/code/py/.venv/Scripts/python -m chatbot)",
       "Bash(d:/code/py/.venv/Scripts/python -c \"from chatbot.__main__ import main; main\\(\\)\")",
-      "Bash(python practice_03_file_io.py)"
+      "Bash(python practice_03_file_io.py)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(git push:*)",
+      "Bash(npx skills:*)"
     ],
     "additionalDirectories": [
       "d:\\code\\py\\week1-python-ai-basics"

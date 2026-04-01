@@ -58,7 +58,10 @@ nums = [10, 20, 30, 20, 40]
 
 # index = JS indexOf（找第一个匹配的索引）
 print(f"index(20): {nums.index(20)}")  # 1
-print(f"index(99): {nums.index(99)}")  # ValueError: 99 not in list
+try:
+    print(f"index(99): {nums.index(99)}")
+except ValueError as e:
+    print(f"index(99): {e}")  # ValueError: 99 is not in list
 # count = 计数（JS 没有，要用 filter().length）
 print(f"count(20): {nums.count(20)}")  # 2
 
@@ -91,14 +94,14 @@ print(f"sorted(): {new_sorted}, 原列表不变: {original}")
 # 这就是你问的 logs.sort(key=lambda x: x['timestamp'])
 
 students = [
-    {"name": "小明", "score": 85},
-    {"name": "小红", "score": 92},
-    {"name": "小刚", "score": 78},
+    {"name": "小明", "score": 85, "age": 20},
+    {"name": "小红", "score": 92, "age": 22},
+    {"name": "小刚", "score": 78, "age": 19},
 ]
 
-# 按 score 排序
-students.sort(key=lambda x: x['score'])
-print(f"按分数升序: {[s['name'] for s in students]}")  # ['小刚', '小明', '小红']
+# 按 score + age 综合排序
+students.sort(key=lambda x: x['score'] + x['age'])
+print(f"按 score+age 升序: {[s['name'] for s in students]}")  # ['小刚', '小明', '小红']
 
 # 按 score 降序
 students.sort(key=lambda x: x['score'], reverse=True)
