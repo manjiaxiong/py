@@ -58,7 +58,7 @@ nums = [10, 20, 30, 20, 40]
 
 # index = JS indexOf（找第一个匹配的索引）
 print(f"index(20): {nums.index(20)}")  # 1
-
+print(f"index(99): {nums.index(99)}")  # ValueError: 99 not in list
 # count = 计数（JS 没有，要用 filter().length）
 print(f"count(20): {nums.count(20)}")  # 2
 
