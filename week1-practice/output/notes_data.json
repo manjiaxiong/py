@@ -1,0 +1,79 @@
+[
+  {
+    "file": "01_basics.py",
+    "summary": "生成失败: Error code: 502",
+    "key_concepts": [],
+    "difficulty": "unknown",
+    "js_comparison": ""
+  },
+  {
+    "file": "02_advanced.py",
+    "summary": "生成失败: Error code: 502",
+    "key_concepts": [],
+    "difficulty": "unknown",
+    "js_comparison": ""
+  },
+  {
+    "file": "03_env_and_api.py",
+    "summary": "生成失败: Error code: 502",
+    "key_concepts": [],
+    "difficulty": "unknown",
+    "js_comparison": ""
+  },
+  {
+    "file": "03_env_and_apiCloud.py",
+    "summary": "生成失败: Error code: 502",
+    "key_concepts": [],
+    "difficulty": "unknown",
+    "js_comparison": ""
+  },
+  {
+    "file": "04_ai_concepts.py",
+    "summary": "生成失败: Error code: 502",
+    "key_concepts": [],
+    "difficulty": "unknown",
+    "js_comparison": ""
+  },
+  {
+    "file": "05_chatbot.py",
+    "summary": "生成失败: Error code: 502",
+    "key_concepts": [],
+    "difficulty": "unknown",
+    "js_comparison": ""
+  },
+  {
+    "file": "06_advanced_project.py",
+    "summary": "生成失败: Error code: 502",
+    "key_concepts": [],
+    "difficulty": "unknown",
+    "js_comparison": ""
+  },
+  {
+    "file": "07_new_syntax.py",
+    "summary": "生成失败: Error code: 502",
+    "key_concepts": [],
+    "difficulty": "unknown",
+    "js_comparison": ""
+  },
+  {
+    "file": "chatbot\\client.py",
+    "summary": "生成失败: Error code: 502",
+    "key_concepts": [],
+    "difficulty": "unknown",
+    "js_comparison": ""
+  },
+  {
+    "file": "chatbot\\commands.py",
+    "summary": "生成失败: Error code: 502",
+    "key_concepts": [],
+    "difficulty": "unknown",
+    "js_comparison": ""
+  },
+  {
+    "file": "chatbot\\config.py",
+    "summary": "生成失败: Error code: 502",
+    "key_concepts": [],
+    "difficulty": "unknown",
+    "js_comparison": ""
+  }
+]

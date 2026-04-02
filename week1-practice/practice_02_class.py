@@ -80,8 +80,26 @@ class TaskManager:
 #   - deadline: str (截止日期，如 "2026-04-05")
 # 重写 __str__():
 #   - 在父类基础上加上截止日期 "[x] 标题 (优先级) | 截止: 2026-04-05"
-
+class TimedTask(Task):
+    def __init__(self, title, priority, deadline, done=False):
+        super().__init__(title, priority, done)
+        self.deadline = deadline
+    def __str__(self):
+        base_str = super().__str__()
+        return f"{base_str} | 截止: {self.deadline}"
 
 # TODO 2.2: 给 TaskManager 加一个 export_json() 方法
 # 把所有任务导出为 JSON 字符串
 # 提示: Task 对象不能直接 json.dumps，需要先转成 dict
+def export_json(task_manager):
+    tasks_data = []
+    for task in task_manager.tasks:
+        task_dict = {
+            "title": task.title,
+            "priority": task.priority,
+            "done": task.done
+        }
+        if isinstance(task, TimedTask):
+            task_dict["deadline"] = task.deadline
+        tasks_data.append(task_dict)
+    return json.dumps(tasks_data, ensure_ascii=False, indent=2)
