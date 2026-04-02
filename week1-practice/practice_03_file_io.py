@@ -83,6 +83,7 @@ def scan_py_files(directory):
     py_files = []
     for file_path in Path(directory).rglob("*.py"):
         if file_path.is_file():
+            # print(len(open(file_path, "r", encoding="utf-8").readlines()))
             lines = sum(1 for _ in open(file_path, "r", encoding="utf-8"))
             size_kb = file_path.stat().st_size / 1024
             py_files.append({
@@ -104,7 +105,7 @@ def scan_py_files(directory):
 # const targetDir = path.resolve(__dirname, '../week1-python-ai-basics')
 target_dir = Path(__file__).parent.parent / "week1-python-ai-basics"
 # print(scan_py_files(target_dir))
-scan_py_files(target_dir)
+# scan_py_files(target_dir)
 # print(sum(500 for _ in [1, 2, 3]))
 # TODO 2.2: 写一个函数 generate_report(directory)
 # - 调用 scan_py_files 获取文件列表
@@ -114,7 +115,24 @@ scan_py_files(target_dir)
 #   最大文件: xxx.py (120 行)
 #   最小文件: xxx.py (5 行)
 # - 将报告同时保存到 report.json
-
+def generate_report(directory):
+    file_list = scan_py_files(directory)
+    total_files = len(file_list)
+    total_files_lines = sum(file['lines'] for file in file_list)
+    max_file = max(file_list, key=lambda x: x['lines'])
+    min_file = min(file_list, key=lambda x: x['lines'])
+    report = {
+        "total_files": total_files,
+        "total_lines": total_files_lines,
+        "max_file": max_file,
+        "min_file": min_file
+    }
+    print(f"总文件数: {report['total_files']}")
+    print(f"总代码行数: {report['total_lines']}")
+    print(f"最大文件: {report['max_file']['path']} ({report['max_file']['lines']} 行)")
+    print(f"最小文件: {report['min_file']['path']} ({report['min_file']['lines']} 行)")
+    with open("report.json", "w", encoding="utf-8") as f:
+        json.dump(report, f, ensure_ascii=False, indent=2)
 
 # 测试:
-# generate_report("../week1-python-ai-basics")
+generate_report(target_dir)

@@ -21,7 +21,8 @@
       "Bash(ls d:/code/py/week1-python-ai-basics/*.py)",
       "Bash(ls d:/code/py/week1-python-ai-basics/**/*.py)",
       "Bash(python -c \"from pathlib import Path; print\\(Path\\('../week1-python-ai-basics'\\).resolve\\(\\)\\)\")",
-      "Bash(python week1-practice/practice_03_file_io.py)"
+      "Bash(python week1-practice/practice_03_file_io.py)",
+      "Bash(git config:*)"
     ],
     "additionalDirectories": [
       "d:\\code\\py\\week1-python-ai-basics"
