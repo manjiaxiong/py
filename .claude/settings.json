@@ -16,7 +16,12 @@
       "Bash(git add:*)",
       "Bash(git commit -m ':*)",
       "Bash(git push:*)",
-      "Bash(npx skills:*)"
+      "Bash(npx skills:*)",
+      "Bash(python week1-practice/reference_list_dict.py)",
+      "Bash(ls d:/code/py/week1-python-ai-basics/*.py)",
+      "Bash(ls d:/code/py/week1-python-ai-basics/**/*.py)",
+      "Bash(python -c \"from pathlib import Path; print\\(Path\\('../week1-python-ai-basics'\\).resolve\\(\\)\\)\")",
+      "Bash(python week1-practice/practice_03_file_io.py)"
     ],
     "additionalDirectories": [
       "d:\\code\\py\\week1-python-ai-basics"
