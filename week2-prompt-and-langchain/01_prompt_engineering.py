@@ -69,7 +69,7 @@ def get_user(users, name):
 
 print("--- 结构化 Prompt 的效果 ---")
 result = ask(good_prompt)
-print(result)
+print(result, end="", flush=True)
 
 
 # ===========================================
