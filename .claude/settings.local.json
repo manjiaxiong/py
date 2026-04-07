@@ -7,7 +7,9 @@
       "WebFetch(domain:platform.minimaxi.com)",
       "Bash(pip list:*)",
       "Bash(pip install:*)",
-      "Bash(python week1-practice/output/generate_ppt.py)"
+      "Bash(python week1-practice/output/generate_ppt.py)",
+      "WebFetch(domain:www.zhipin.com)",
+      "WebFetch(domain:roadmap.sh)"
     ]
   }
 }
