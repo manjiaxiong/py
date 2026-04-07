@@ -8,6 +8,7 @@
 import json
 import time
 import asyncio
+import inspect
 import functools
 from pathlib import Path
 from anthropic import AsyncAnthropic
@@ -47,7 +48,7 @@ def timer(func):
         return result
 
     # 根据原函数类型返回对应的 wrapper
-    if asyncio.iscoroutinefunction(func):
+    if inspect.iscoroutinefunction(func):
         return async_wrapper
     return sync_wrapper
 

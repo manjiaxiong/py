@@ -117,6 +117,7 @@ def main():
     """
     # 解析命令行参数：用户可以指定扫描目录
     if len(sys.argv) > 1:
+        print(f"📂 用户指定了目录参数: {sys.argv}")
         # 用户指定了目录
         target_dir = Path(sys.argv[1])
         # 如果是相对路径，基于脚本所在目录解析（避免 cwd 的坑）

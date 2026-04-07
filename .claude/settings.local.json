@@ -4,7 +4,10 @@
       "WebSearch",
       "WebFetch(domain:platform.minimax.io)",
       "WebFetch(domain:developer.puter.com)",
-      "WebFetch(domain:platform.minimaxi.com)"
+      "WebFetch(domain:platform.minimaxi.com)",
+      "Bash(pip list:*)",
+      "Bash(pip install:*)",
+      "Bash(python week1-practice/output/generate_ppt.py)"
     ]
   }
 }
