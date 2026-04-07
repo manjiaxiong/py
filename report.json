@@ -1,0 +1,14 @@
+{
+  "total_files": 12,
+  "total_lines": 2202,
+  "max_file": {
+    "path": "d:\\code\\py\\week1-python-ai-basics\\06_advanced_project.py",
+    "lines": 368,
+    "size_kb": 11.29
+  },
+  "min_file": {
+    "path": "d:\\code\\py\\week1-python-ai-basics\\chatbot\\__init__.py",
+    "lines": 4,
+    "size_kb": 0.17
+  }
+}
