@@ -259,12 +259,12 @@ test_inputs = [
     "帮我搜一下 5000 元以内的手机",
 ]
 
-for user_input in test_inputs:
-    result = smart_router(user_input)
-    if result:
-        print(f"输入: {user_input}")
-        print(f"  → 工具: {result['tool']}")
-        print(f"  → 参数: {result['params']}\n")
+# for user_input in test_inputs:
+#     result = smart_router(user_input)
+#     if result:
+#         print(f"输入: {user_input}")
+#         print(f"  → 工具: {result['tool']}")
+#         print(f"  → 参数: {result['params']}\n")
 
 
 # ===========================================
@@ -325,7 +325,7 @@ def chat_with_tools(user_input):
         messages=messages,
         tools=tools,
     )
-
+    print(f"AI 原始回复: {response}")  # 调试用，看看 AI 的原始回复结构
     # 检查 AI 是否要调用工具
     # stop_reason == "tool_use" 表示 AI 想调用工具
     if response.stop_reason == "tool_use":
@@ -372,9 +372,9 @@ def chat_with_tools(user_input):
 
 
 # 测试完整流程
-print("--- 完整 Tool Use 流程 ---")
-answer = chat_with_tools("北京今天天气如何？")
-print(f"  最终回复: {answer}\n")
+# print("--- 完整 Tool Use 流程 ---")
+# answer = chat_with_tools("北京今天天气如何？")
+# print(f"  最终回复: {answer}\n")
 
 # answer = chat_with_tools("128 乘以 3 加 99 等于多少？")
 # print(f"  最终回复: {answer}")
@@ -390,66 +390,66 @@ print(f"\n{'='*50}")
 print("=== 5. Pydantic 数据验证 ===\n")
 
 # 先检查是否安装了 pydantic
-# try:
-#     from pydantic import BaseModel, Field, ValidationError
+try:
+    from pydantic import BaseModel, Field, ValidationError
 
-#     # 定义数据模型（= TypeScript interface + 运行时验证）
-#     class ProductInfo(BaseModel):
-#         """
-#         商品信息模型
+    # 定义数据模型（= TypeScript interface + 运行时验证）
+    class ProductInfo(BaseModel):
+        """
+        商品信息模型
 
-#         JS 类比 (Zod):
-#         const ProductSchema = z.object({
-#           name: z.string(),
-#           price: z.number().positive(),
-#           color: z.string().default("未知"),
-#           storage: z.string().optional(),
-#         })
-#         """
-#         name: str                                  # 必填
-#         price: float = Field(gt=0)                 # 必填，且必须 > 0
-#         color: str = "未知"                         # 有默认值 = 可选
-#         storage: str | None = None                  # 可选，默认 None
+        JS 类比 (Zod):
+        const ProductSchema = z.object({
+          name: z.string(),
+          price: z.number().positive(),
+          color: z.string().default("未知"),
+          storage: z.string().optional(),
+        })
+        """
+        name: str                                  # 必填
+        price: float = Field(gt=0)                 # 必填，且必须 > 0
+        color: str = "未知"                         # 有默认值 = 可选
+        storage: str | None = None                  # 可选，默认 None
 
-#     # --- 验证合法数据 ---
-#     valid_data = {"name": "iPhone 15", "price": 5999, "color": "黑色"}
-#     product = ProductInfo(**valid_data)
-#     print(f"✅ 合法数据: {product}")
-#     print(f"   name={product.name}, price={product.price}")
+    # --- 验证合法数据 ---
+    valid_data = {"name": "iPhone 15", "price": 5999, "color": "黑色"}
+    product = ProductInfo(**valid_data)
+    print(f"✅ 合法数据: {product}")
+    print(f"   name={product.name}, price={product.price}")
 
-#     # --- 验证非法数据 ---
-#     try:
-#         bad_data = {"name": "iPhone 15", "price": -100}  # 价格为负！
-#         ProductInfo(**bad_data)
-#     except ValidationError as e:
-#         print(f"\n❌ 非法数据被拦截: {e.errors()[0]['msg']}")
+    # --- 验证非法数据 ---
+    try:
+        bad_data = {"name": "iPhone 15", "price": -100}  # 价格为负！
+        ProductInfo(**bad_data)
+    except ValidationError as e:
+        print(f"\n❌ 非法数据被拦截: {e.errors()[0]['msg']}")
 
-#     # --- 验证缺少必填字段 ---
-#     try:
-#         missing_data = {"color": "黑色"}  # 没有 name 和 price！
-#         ProductInfo(**missing_data)
-#     except ValidationError as e:
-#         print(f"❌ 缺少必填字段: {[err['loc'][0] for err in e.errors()]}")
+    # --- 验证缺少必填字段 ---
+    try:
+        missing_data = {"color": "黑色"}  # 没有 name 和 price！
+        ProductInfo(**missing_data)
+    except ValidationError as e:
+        print(f"❌ 缺少必填字段: {[err['loc'][0] for err in e.errors()]}")
 
-#     # --- 实际使用：验证 AI 返回的数据 ---
-#     def safe_extract(text):
-#         """带 Pydantic 验证的数据提取"""
-#         raw = extract_with_prompt(text)
-#         if raw is None:
-#             return None
-#         try:
-#             return ProductInfo(**raw)
-#         except ValidationError as e:
-#             print(f"⚠️ AI 返回数据不合法: {e}")
-#             return None
+    # --- 实际使用：验证 AI 返回的数据 ---
+    def safe_extract(text):
+        """带 Pydantic 验证的数据提取"""
+        raw = extract_with_prompt(text)
+        if raw is None:
+            return None
+        try:
+            return ProductInfo(**raw)
+        except ValidationError as e:
+            print(f"⚠️ AI 返回数据不合法: {e}")
+            return None
 
-#     result = safe_extract("MacBook Air M3 8+256 星光色 7999 元")
-#     if result:
-#         print(f"\n✅ 验证通过: {result.model_dump()}")
+    result = safe_extract("MacBook Air M3 8+256 星光色 7999 元")
+    if result:
+        print(f"\n✅ 验证通过: {result.model_dump()}")
 
-# except ImportError:
-#     print("⚠️ pydantic 未安装，跳过此节")
-#     print("安装命令: pip install pydantic")
+except ImportError:
+    print("⚠️ pydantic 未安装，跳过此节")
+    print("安装命令: pip install pydantic")
 
 
 # ===========================================

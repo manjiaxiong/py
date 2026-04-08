@@ -1,0 +1,104 @@
+[
+  {
+    "id": "eval_001",
+    "input": "iPhone 15 Pro 256GB 深蓝色 售价 8999 元",
+    "task": "extract_product",
+    "expected": {
+      "name": "iPhone 15 Pro",
+      "price": 8999,
+      "color": "深蓝色",
+      "storage": "256GB"
+    },
+    "check_fields": ["name", "price"],
+    "tags": ["商品提取", "基础"]
+  },
+  {
+    "id": "eval_002",
+    "input": "华为 Mate 60 Pro 512GB 雅丹黑 售价 6999 元",
+    "task": "extract_product",
+    "expected": {
+      "name": "华为 Mate 60 Pro",
+      "price": 6999,
+      "color": "雅丹黑",
+      "storage": "512GB"
+    },
+    "check_fields": ["name", "price"],
+    "tags": ["商品提取", "基础"]
+  },
+  {
+    "id": "eval_003",
+    "input": "小米14 Ultra 16+512 白色 4999元",
+    "task": "extract_product",
+    "expected": {
+      "name": "小米14 Ultra",
+      "price": 4999,
+      "color": "白色",
+      "storage": "512GB"
+    },
+    "check_fields": ["name", "price"],
+    "tags": ["商品提取", "简写格式"]
+  },
+  {
+    "id": "eval_004",
+    "input": "张三，5年前端开发经验，熟练掌握 React、TypeScript、Node.js，本科毕业于浙江大学",
+    "task": "extract_resume",
+    "expected": {
+      "name": "张三",
+      "experience_years": 5,
+      "skills": ["React", "TypeScript", "Node.js"],
+      "education": "本科 浙江大学"
+    },
+    "check_fields": ["name", "experience_years"],
+    "tags": ["简历提取", "基础"]
+  },
+  {
+    "id": "eval_005",
+    "input": "李四，3年 Python 后端开发，精通 Django 和 FastAPI，硕士毕业于清华大学",
+    "task": "extract_resume",
+    "expected": {
+      "name": "李四",
+      "experience_years": 3,
+      "skills": ["Python", "Django", "FastAPI"],
+      "education": "硕士 清华大学"
+    },
+    "check_fields": ["name", "experience_years"],
+    "tags": ["简历提取", "基础"]
+  },
+  {
+    "id": "eval_006",
+    "input": "王五，应届毕业生，会一点 Java，本科毕业于某普通大学",
+    "task": "extract_resume",
+    "expected": {
+      "name": "王五",
+      "experience_years": 0,
+      "skills": ["Java"],
+      "education": "本科"
+    },
+    "check_fields": ["name", "experience_years"],
+    "tags": ["简历提取", "边界case", "应届生"]
+  },
+  {
+    "id": "eval_007",
+    "input": "这个手机不错但是没说价格和型号",
+    "task": "extract_product",
+    "expected": {
+      "name": "",
+      "price": 0
+    },
+    "check_fields": [],
+    "tags": ["商品提取", "边界case", "信息不全"]
+  },
+  {
+    "id": "eval_008",
+    "input": "赵六，10年全栈开发，精通 React、Vue、Node.js、Python、Go、K8s、Docker，硕士毕业于北京大学，目前在字节跳动任技术负责人",
+    "task": "extract_resume",
+    "expected": {
+      "name": "赵六",
+      "experience_years": 10,
+      "skills": ["React", "Vue", "Node.js", "Python", "Go", "K8s", "Docker"],
+      "education": "硕士 北京大学"
+    },
+    "check_fields": ["name", "experience_years"],
+    "tags": ["简历提取", "多技能"]
+  }
+]

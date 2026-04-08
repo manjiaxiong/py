@@ -23,6 +23,8 @@ client = Anthropic(
     api_key=minimax_api_key,
     base_url=minimax_api_base,
 )
+
+
 def ask(prompt, system=""):
     messages = []
     if system:
@@ -37,7 +39,12 @@ def ask(prompt, system=""):
         max_tokens=500,
         messages=messages,
     )
-    return response.content[0].text.strip()
+    # return response.content[0].text.strip()
+    for block in response.content:
+        if block.type == "text":
+            return block.text.strip()
+    raise Exception("No text block in response")
+
 
 # --- 题目 1: Few-shot 数据提取器 ---
 
@@ -50,9 +57,15 @@ def ask(prompt, system=""):
 # print(extract_product("MacBook Air M3 16GB+512GB 星光色 售价 10499 元"))
 # print(extract_product("华为 Mate 60 Pro 512GB 雅丹黑 售价 6999 元"))
 message = [
-    {"role": "system", "content": "你是一个商品信息提取器，专门从商品描述中提取结构化信息。"},
+    {
+        "role": "system",
+        "content": "你是一个商品信息提取器，专门从商品描述中提取结构化信息。",
+    },
     {"role": "user", "content": "iPhone 15 Pro Max 256GB 钛金属色 官方价 9999 元"},
-    {"role": "assistant", "content": '{"name": "iPhone 15 Pro Max", "storage": "256GB", "color": "钛金属色", "price": 9999}'},
+    {
+        "role": "assistant",
+        "content": '{"name": "iPhone 15 Pro Max", "storage": "256GB", "color": "钛金属色", "price": 9999}',
+    },
 ]
 # print(ask([*message, {"role": "user", "content": "小米 14 Pro 512GB 陶瓷白 官方价 5999 元"}]))
 # print(ask([*message, {"role": "user", "content": "华为 Mate 60 Pro 512GB 雅丹黑 售价 6999 元"}]))
@@ -74,11 +87,15 @@ message = [
 #     return []
 # """)
 
+
 def analyze_complexity(code):
     system_prompt = "你是一个算法分析专家，专门分析代码的时间复杂度和空间复杂度。请按步骤推理，展示你的分析过程。"
-    user_prompt = f"请分析以下 Python 代码的时间复杂度和空间复杂度:\n```python\n{code}\n```"
+    user_prompt = (
+        f"请分析以下 Python 代码的时间复杂度和空间复杂度:\n```python\n{code}\n```"
+    )
     response = ask(user_prompt, system=system_prompt)
     print(response)
+
 
 # analyze_complexity("""
 # def two_sum(nums, target):
@@ -91,6 +108,7 @@ def analyze_complexity(code):
 #     return []
 # """)
 # --- 题目 3: System Prompt 角色扮演 ---
+
 
 # TODO 3.1: 写一个函数 multi_role_review(code)
 # - 让 3 个不同角色审查同一段代码:
@@ -134,6 +152,7 @@ async_client = AsyncAnthropic(
     api_key=minimax_api_key,
     base_url=minimax_api_base,
 )
+
 
 async def async_ask(prompt, system=""):
     """异步版的 ask — 和同步版逻辑一样，只是加了 async/await"""
@@ -188,15 +207,7 @@ async def multi_role_review_async(raw_code):
         print(f"--- {role} 的审查意见 ---")
         print(response, end="\n\n")
 
-asyncio.run(multi_role_review_async("""
-def get_user_data(user_id):
-    query = f"SELECT * FROM users WHERE id = {user_id}"
-    result = db.execute(query)
-    data = []
-    for row in result:
-        data.append({"id": row[0], "name": row[1], "email": row[2]})
-    return data
-"""))
+
 # 对比测试（取消注释运行）:
 # test_code = """
 # def get_user_data(user_id):
@@ -219,6 +230,7 @@ def get_user_data(user_id):
 # print(f"异步耗时: {time.time() - start:.2f}秒")
 
 # --- 题目 4: Prompt 模板引擎 ---
+
 
 # TODO 4.1: 写一个 PromptTemplate 类
 # - __init__(self, template): 接收模板字符串
@@ -249,6 +261,7 @@ class PromptTemplate:
       }
     }
     """
+
     def __init__(self, template, defaults=None):
         self.template = template
         # defaults 存默认值，没传就是空字典
@@ -278,7 +291,7 @@ error_tpl = PromptTemplate(
     "错误信息: {error}\n\n"
     "出错代码:\n```{language}\n{code}\n```\n\n"
     "请分析错误原因，并给出修复后的代码。",
-    defaults={"language": "Python"}
+    defaults={"language": "Python"},
 )
 
 # 测试:
@@ -296,6 +309,7 @@ error_tpl = PromptTemplate(
 # - System Prompt: 你是 Prompt 优化专家，把模糊的提示词变成结构清晰的
 # - 优化后的 Prompt 要包含：角色、任务、格式要求、约束
 
+
 def optimize_prompt(original_prompt):
     """
     Prompt 优化器 — 把模糊的 prompt 优化成结构化的好 prompt
@@ -303,7 +317,8 @@ def optimize_prompt(original_prompt):
     原理: 用 AI 来优化 prompt（用 AI 优化和 AI 的沟通方式）
     这就是 "meta-prompting"（元提示）：用 prompt 生成更好的 prompt
     """
-    system = (
+    # 版本 1: 纯文本拼接
+    system_v1 = (
         "你是一位 Prompt Engineering 专家。\n"
         "用户会给你一个模糊、简短的提示词，请你将其优化为结构清晰、效果更好的 Prompt。\n\n"
         "优化后的 Prompt 必须包含以下部分:\n"
@@ -314,7 +329,27 @@ def optimize_prompt(original_prompt):
         "直接输出优化后的 Prompt，不要解释你做了什么改动。"
     )
 
-    result = ask(original_prompt, system=system)
+    # 版本 2: XML 标签版（结构更清晰，Claude 对 XML 理解更好）
+    system_v2 = """
+<role>你是一位 Prompt Engineering 专家</role>
+
+<task>
+用户会给你一个模糊、简短的提示词，请你将其优化为结构清晰、效果更好的 Prompt。
+</task>
+
+<output_format>
+优化后的 Prompt 必须包含以下部分:
+<section name="角色设定">明确 AI 应该扮演什么角色</section>
+<section name="任务描述">具体要做什么，输入和输出是什么</section>
+<section name="格式要求">输出应该是什么格式（列表、JSON、代码等）</section>
+<section name="约束条件">有什么限制或注意事项</section>
+</output_format>
+
+<constraints>
+直接输出优化后的 Prompt，不要解释你做了什么改动。
+</constraints>"""
+
+    result = ask(original_prompt, system=system_v2)
     return result
 
 
