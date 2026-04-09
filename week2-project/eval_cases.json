@@ -1,0 +1,79 @@
+[
+  {
+    "id": "normal_frontend",
+    "input": "张三，5年前端开发经验，熟练掌握 React、TypeScript、Node.js。本科毕业于浙江大学。期望薪资 25k-35k。",
+    "expected": {
+      "name": "张三",
+      "years": 5,
+      "skills_contains": ["React", "TypeScript", "Node.js"],
+      "education": "本科",
+      "expected_salary": "25k-35k"
+    }
+  },
+  {
+    "id": "senior_backend",
+    "input": "李四，8年后端开发经验，精通 Java、Spring、MySQL、Redis、Kubernetes。硕士毕业于北京大学。期望薪资 40k-50k。",
+    "expected": {
+      "name": "李四",
+      "years": 8,
+      "skills_contains": ["Java", "MySQL", "Redis"],
+      "education": "硕士",
+      "expected_salary": "40k-50k"
+    }
+  },
+  {
+    "id": "fresh_graduate",
+    "input": "王五，应届毕业生，了解 Python、HTML、CSS。本科毕业于某普通院校，无工作经验。",
+    "expected": {
+      "name": "王五",
+      "years": 0,
+      "skills_contains": ["Python"],
+      "education": "本科",
+      "expected_salary": null
+    }
+  },
+  {
+    "id": "ai_engineer",
+    "input": "赵六，3年 AI 开发经验，熟悉 Python、PyTorch、LangChain、大模型微调。硕士毕业。期望 30k-40k。",
+    "expected": {
+      "name": "赵六",
+      "years": 3,
+      "skills_contains": ["Python", "LangChain"],
+      "education": "硕士",
+      "expected_salary": "30k-40k"
+    }
+  },
+  {
+    "id": "no_salary",
+    "input": "陈七，10年全栈开发，掌握 React、Node.js、Go、PostgreSQL、Docker。博士学历。",
+    "expected": {
+      "name": "陈七",
+      "years": 10,
+      "skills_contains": ["React", "Go", "Docker"],
+      "education": "博士",
+      "expected_salary": null
+    }
+  },
+  {
+    "id": "minimal_info",
+    "input": "小明，1年经验，会 Java。本科。",
+    "expected": {
+      "name": "小明",
+      "years": 1,
+      "skills_contains": ["Java"],
+      "education": "本科",
+      "expected_salary": null
+    }
+  },
+  {
+    "id": "mixed_format",
+    "input": "姓名：刘八\n工作经验：6年\n技术栈：Vue, React, Webpack, Vite, 微前端\n学历：本科（双一流）\n期望：20k-30k/月",
+    "expected": {
+      "name": "刘八",
+      "years": 6,
+      "skills_contains": ["Vue", "React"],
+      "education": "本科",
+      "expected_salary": "20k-30k"
+    }
+  }
+]

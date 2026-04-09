@@ -11,22 +11,17 @@
 # 4. 怎么做回归测试（改了 prompt 不退化）
 # ===========================================
 
-import os
+import sys
 import json
 import time
 from pathlib import Path
 from datetime import datetime
-from dotenv import load_dotenv
-from anthropic import Anthropic
+
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+from utils import get_client, clean_markdown
 
 # 初始化
-load_dotenv(Path(__file__).parent / ".env")
-
-client = Anthropic(
-    api_key=os.getenv("MINIMAX_API_KEY"),
-    base_url=os.getenv("MINIMAX_API_BASE"),
-)
-MODEL = os.getenv("MINIMAX_MODEL_NAME")
+client, MODEL = get_client(Path(__file__).parent / ".env")
 
 
 # ===========================================
@@ -64,16 +59,16 @@ print("""
 # 评估集 = 一组 {输入, 期望输出} 的集合
 # 存成 JSON 文件，方便管理和版本控制
 
-print(f"\n{'='*50}")
-print("=== 2. 构建评估集 ===\n")
+# print(f"\n{'='*50}")
+# print("=== 2. 构建评估集 ===\n")
 
 # 加载评估集
 eval_file = Path(__file__).parent / "eval_cases.json"
 with open(eval_file, "r", encoding="utf-8") as f:
     eval_cases = json.load(f)
 
-print(f"加载了 {len(eval_cases)} 条评估用例")
-print(f"第一条: {json.dumps(eval_cases[0], ensure_ascii=False, indent=2)}")
+# print(f"加载了 {len(eval_cases)} 条评估用例")
+# print(f"第一条: {json.dumps(eval_cases[0], ensure_ascii=False, indent=2)}")
 
 # 评估集的设计原则：
 # 1. 覆盖正常 case（基础输入）
@@ -92,8 +87,8 @@ print(f"第一条: {json.dumps(eval_cases[0], ensure_ascii=False, indent=2)}")
 # 就像给 fetch 加 interceptor 记录请求日志
 # axios.interceptors.request.use(config => { console.log(config); return config })
 
-print(f"\n{'='*50}")
-print("=== 3. 带日志的 API 调用 ===\n")
+# print(f"\n{'='*50}")
+# print("=== 3. 带日志的 API 调用 ===\n")
 
 # 日志存储
 request_logs = []
@@ -131,7 +126,9 @@ def ask_with_log(prompt, system="", max_tokens=300):
         "timestamp": datetime.now().isoformat(),
         "prompt": prompt[:100] + "..." if len(prompt) > 100 else prompt,
         "system": system[:50] + "..." if len(system) > 50 else system,
-        "response": result_text[:200] + "..." if len(result_text) > 200 else result_text,
+        "response": (
+            result_text[:200] + "..." if len(result_text) > 200 else result_text
+        ),
         "elapsed_ms": elapsed_ms,
         "input_tokens": response.usage.input_tokens,
         "output_tokens": response.usage.output_tokens,
@@ -158,8 +155,8 @@ def ask_with_log(prompt, system="", max_tokens=300):
 # 3. 对比结果和期望，判断是否通过
 # 4. 统计通过率 + 收集失败样本
 
-print(f"\n{'='*50}")
-print("=== 4. 自动化评估 ===\n")
+# print(f"\n{'='*50}")
+# print("=== 4. 自动化评估 ===\n")
 
 
 def extract_with_prompt(text, task="extract_product"):
@@ -184,14 +181,8 @@ def extract_with_prompt(text, task="extract_product"):
 
     result_text, log = ask_with_log(prompt)
 
-    # 清理 markdown 代码块
-    raw = result_text.strip()
-    if raw.startswith("```"):
-        raw = raw.split("\n", 1)[1]
-        raw = raw.rsplit("```", 1)[0].strip()
-
     try:
-        return json.loads(raw)
+        return json.loads(clean_markdown(result_text))
     except json.JSONDecodeError:
         return None
 
@@ -233,7 +224,9 @@ def check_result(actual, expected, check_fields):
         # 字符串包含匹配
         elif isinstance(expected_val, str):
             if expected_val not in str(actual_val):
-                errors.append(f"{field}: 期望包含 '{expected_val}', 实际 '{actual_val}'")
+                errors.append(
+                    f"{field}: 期望包含 '{expected_val}', 实际 '{actual_val}'"
+                )
 
         # 列表匹配（检查关键元素是否存在）
         elif isinstance(expected_val, list):
@@ -322,7 +315,9 @@ def run_eval(cases, tag_filter=None):
         "total": total_count,
         "passed": passed_count,
         "failed": total_count - passed_count,
-        "pass_rate": round(passed_count / total_count * 100, 1) if total_count > 0 else 0,
+        "pass_rate": (
+            round(passed_count / total_count * 100, 1) if total_count > 0 else 0
+        ),
         "avg_latency_ms": round(total_latency / total_count) if total_count > 0 else 0,
         "total_tokens": total_tokens,
         "failures": failures,
@@ -345,8 +340,8 @@ def run_eval(cases, tag_filter=None):
 # ===========================================
 # 光知道"失败了"不够，要分析失败的模式
 
-print(f"\n{'='*50}")
-print("=== 5. 失败样本分析 ===\n")
+# print(f"\n{'='*50}")
+# print("=== 5. 失败样本分析 ===\n")
 
 
 def analyze_failures(summary):
@@ -371,7 +366,9 @@ def analyze_failures(summary):
     for f in failures:
         print(f"  [{f['id']}] {f['input'][:40]}...")
         print(f"    期望: {json.dumps(f['expected'], ensure_ascii=False)}")
-        print(f"    实际: {json.dumps(f['actual'], ensure_ascii=False) if f['actual'] else 'None'}")
+        print(
+            f"    实际: {json.dumps(f['actual'], ensure_ascii=False) if f['actual'] else 'None'}"
+        )
         print(f"    原因: {f['reason']}")
         print()
 
@@ -381,8 +378,8 @@ def analyze_failures(summary):
 # ===========================================
 # 内存里的日志重启就没了，要写到文件里
 
-print(f"\n{'='*50}")
-print("=== 6. 日志持久化 ===\n")
+# print(f"\n{'='*50}")
+# print("=== 6. 日志持久化 ===\n")
 
 
 def save_logs(logs, filename="debug_log.jsonl"):
@@ -430,8 +427,8 @@ def save_eval_report(summary, filename="eval_report.json"):
 # 问题：新 prompt 在新 case 上好了，但旧 case 会不会退化？
 # 方法：改之前先跑一遍评估，改之后再跑一遍，对比通过率
 
-print(f"\n{'='*50}")
-print("=== 7. 回归测试 ===\n")
+# print(f"\n{'='*50}")
+# print("=== 7. 回归测试 ===\n")
 
 
 def regression_test(cases, prompt_v1_fn, prompt_v2_fn, tag_filter=None):
@@ -494,6 +491,7 @@ def regression_test(cases, prompt_v1_fn, prompt_v2_fn, tag_filter=None):
 # --- 回归测试示例 ---
 # 假设我们优化了商品提取的 prompt（加了 few-shot）
 
+
 def extract_v2(text, task="extract_product"):
     """
     V2 版本：加了 few-shot 示例
@@ -523,12 +521,8 @@ def extract_v2(text, task="extract_product"):
         return None
 
     result_text, _ = ask_with_log(prompt)
-    raw = result_text.strip()
-    if raw.startswith("```"):
-        raw = raw.split("\n", 1)[1]
-        raw = raw.rsplit("```", 1)[0].strip()
     try:
-        return json.loads(raw)
+        return json.loads(clean_markdown(result_text))
     except json.JSONDecodeError:
         return None
 
@@ -542,8 +536,8 @@ def extract_v2(text, task="extract_product"):
 # 8. 完整评估流程演示
 # ===========================================
 
-print(f"\n{'='*50}")
-print("=== 8. 完整评估流程 ===\n")
+# print(f"\n{'='*50}")
+# print("=== 8. 完整评估流程 ===\n")
 
 
 def full_eval_demo():
@@ -581,22 +575,22 @@ def full_eval_demo():
 # 总结
 # ===========================================
 
-print(f"\n{'='*50}")
-print("=== 总结 ===")
-print("""
-AI 应用评估与调试的核心：
-
-1. 评估集     — 固定输入 + 期望输出，存成 JSON，版本控制
-2. 自动评估   — run_eval() 批量跑 case，统计通过率
-3. 调试日志   — 每次 API 调用记录 prompt/response/token/耗时
-4. 失败分析   — 找出失败模式，针对性优化 prompt
-5. 回归测试   — 改 prompt 前后对比，确保不退化
-6. 指标关注   — 正确率、延迟、token 消耗、成本
-
-关键心态：
-- AI 应用不是"写完就行"，是"写完 + 评估 + 迭代"
-- 每次改 prompt 都要跑回归
-- 日志是你最好的调试工具
-
-下一课：Day 4 LangChain 基础
-""")
+# print(f"\n{'='*50}")
+# print("=== 总结 ===")
+# print("""
+# AI 应用评估与调试的核心：
+#
+# 1. 评估集     — 固定输入 + 期望输出，存成 JSON，版本控制
+# 2. 自动评估   — run_eval() 批量跑 case，统计通过率
+# 3. 调试日志   — 每次 API 调用记录 prompt/response/token/耗时
+# 4. 失败分析   — 找出失败模式，针对性优化 prompt
+# 5. 回归测试   — 改 prompt 前后对比，确保不退化
+# 6. 指标关注   — 正确率、延迟、token 消耗、成本
+#
+# 关键心态：
+# - AI 应用不是"写完就行"，是"写完 + 评估 + 迭代"
+# - 每次改 prompt 都要跑回归
+# - 日志是你最好的调试工具
+#
+# 下一课：Day 4 LangChain 基础
+# """)
