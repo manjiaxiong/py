@@ -25,10 +25,19 @@
       "Bash(git config:*)",
       "Bash(python week1-practice/reference_json.py)",
       "Bash(python week1-python-ai-basics/07_new_syntax.py)",
-      "Bash(python week1-practice/practice_05_project.py)"
+      "Bash(python week1-practice/practice_05_project.py)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(grep -v \"\\\\.dist-info$\")",
+      "Bash(python -c \"from langgraph.prebuilt import create_react_agent; print\\('create_react_agent 可用'\\)\")",
+      "Bash(python -c \"from langgraph.prebuilt import create_agent; print\\('create_agent 可用'\\)\")",
+      "Bash(pip show:*)",
+      "Bash(python -c ':*)",
+      "Bash(python -c \"from langchain.agents import create_agent; print\\('ok'\\)\")",
+      "Bash(python week2-project/_gen_flow.py)"
     ],
     "additionalDirectories": [
-      "d:\\code\\py\\week1-python-ai-basics"
+      "d:\\code\\py\\week1-python-ai-basics",
+      "d:\\code\\py"
     ]
   }
 }

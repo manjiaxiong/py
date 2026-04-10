@@ -81,7 +81,7 @@ def main():
 
         # 调用 Agent
         prompt = f"帮我分析这份简历：\n{user_input}"
-
+        print(prompt, "promptpromptpromptpromptpromptprompt")
         print()
         if verbose:
             run_agent_verbose(prompt)
