@@ -1,0 +1,72 @@
+[
+  {
+    "id": "rag_001",
+    "question": "React 的常用 Hooks 有哪些？",
+    "expected_source": "react_basics.md",
+    "expected_keywords": ["useState", "useEffect"],
+    "tags": ["检索", "React"]
+  },
+  {
+    "id": "rag_002",
+    "question": "RESTful API 的 HTTP 方法有哪些？",
+    "expected_source": "api_design.md",
+    "expected_keywords": ["GET", "POST", "PUT", "DELETE"],
+    "tags": ["检索", "API"]
+  },
+  {
+    "id": "rag_003",
+    "question": "Python 的列表推导式怎么用？",
+    "expected_source": "python_tips.md",
+    "expected_keywords": ["列表推导", "filter", "map"],
+    "tags": ["检索", "Python"]
+  },
+  {
+    "id": "rag_004",
+    "question": "CORS 是什么？为什么要配置？",
+    "expected_source": "api_design.md",
+    "expected_keywords": ["跨域", "CORS"],
+    "tags": ["检索", "API"]
+  },
+  {
+    "id": "rag_005",
+    "question": "React 性能优化有哪些方法？",
+    "expected_source": "react_basics.md",
+    "expected_keywords": ["React.memo", "useMemo"],
+    "tags": ["检索", "React"]
+  },
+  {
+    "id": "rag_006",
+    "question": "量子计算机的原理是什么？",
+    "expected_source": null,
+    "expected_keywords": [],
+    "tags": ["拒答测试", "无关问题"]
+  },
+  {
+    "id": "rag_007",
+    "question": "怎么做番茄炒蛋？",
+    "expected_source": null,
+    "expected_keywords": [],
+    "tags": ["拒答测试", "无关问题"]
+  },
+  {
+    "id": "rag_008",
+    "question": "Python 异步编程和 JavaScript 的 async/await 有什么区别？",
+    "expected_source": "python_tips.md",
+    "expected_keywords": ["async", "await", "asyncio"],
+    "tags": ["生成", "综合"]
+  },
+  {
+    "id": "rag_009",
+    "question": "API 设计中分页怎么实现？",
+    "expected_source": "api_design.md",
+    "expected_keywords": ["page", "page_size", "total"],
+    "tags": ["检索", "API"]
+  },
+  {
+    "id": "rag_010",
+    "question": "useEffect 的清理函数怎么写？",
+    "expected_source": "react_basics.md",
+    "expected_keywords": ["cleanup", "return"],
+    "tags": ["生成", "React"]
+  }
+]

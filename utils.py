@@ -88,4 +88,8 @@ def ask(client, model, prompt, system="", max_tokens=500):
         kwargs["system"] = system
 
     response = client.messages.create(**kwargs)
-    return response.content[0].text.strip()
+    # 模型可能返回 ThinkingBlock + TextBlock，取第一个有 .text 的 block
+    for block in response.content:
+        if hasattr(block, "text"):
+            return block.text.strip()
+    return ""
