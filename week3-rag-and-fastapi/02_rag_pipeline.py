@@ -253,33 +253,33 @@ print("重启程序后数据不会丢失（持久化存储）\n")
 # 但这里是语义搜索，不是关键词搜索！
 # "前端框架" 能搜到 "React"（关键词搜索做不到）
 
-# print("\n=== 5. 检索测试 ===\n")
-#
-# test_queries = [
-#     "React 有哪些常用的 Hooks？",
-#     "Python 怎么处理异常？",
-#     "API 接口应该怎么设计？",
-#     "怎么做性能优化？",           # 跨文档查询——React 和 Python 都有相关内容
-# ]
-#
-# for query in test_queries:
-#     results = collection.query(
-#         query_texts=[query],   # 查询文本（会自动做 embedding）
-#         n_results=3,           # 返回 top-3（= LIMIT 3）
-#     )
-#
-#     print(f"查询: '{query}'")
-#     print(f"返回 {len(results['documents'][0])} 条结果:")
-#
-#     for i, (doc, meta, dist) in enumerate(zip(
-#         results["documents"][0],
-#         results["metadatas"][0],
-#         results["distances"][0],
-#     )):
-#         similarity = 1 - dist   # cosine distance → similarity
-#         print(f"  {i+1}. [{similarity:.2%}] 来源: {meta['source']}")
-#         print(f"     {doc[:80]}...")
-#     print()
+print("\n=== 5. 检索测试 ===\n")
+
+test_queries = [
+    "React 有哪些常用的 Hooks？",
+    "Python 怎么处理异常？",
+    "API 接口应该怎么设计？",
+    "怎么做性能优化？",           # 跨文档查询——React 和 Python 都有相关内容
+]
+
+for query in test_queries:
+    results = collection.query(
+        query_texts=[query],   # 查询文本（会自动做 embedding）
+        n_results=3,           # 返回 top-3（= LIMIT 3）
+    )
+
+    print(f"查询: '{query}'")
+    print(f"返回 {len(results['documents'][0])} 条结果:")
+
+    for i, (doc, meta, dist) in enumerate(zip(
+        results["documents"][0],
+        results["metadatas"][0],
+        results["distances"][0],
+    )):
+        similarity = 1 - dist   # cosine distance → similarity
+        print(f"  {i+1}. [{similarity:.2%}] 来源: {meta['source']}")
+        print(f"     {doc[:80]}...")
+    print()
 
 
 # ===========================================

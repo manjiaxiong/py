@@ -181,8 +181,8 @@ agent = create_react_agent(
 )
 
 # 调用 Agent
-# result = agent.invoke({"messages": [HumanMessage(content="北京今天天气怎么样？")]})
-# # 打印最终回复（最后一条消息）
+# result = agent.invoke({"messages": [HumanMessage(content="日本今天天气怎么样？")]})
+# # # 打印最终回复（最后一条消息）
 # print(f"回复: {result['messages'][-1].content}")
 
 
@@ -222,7 +222,7 @@ def run_agent_verbose(question):
 
 
 # 测试：简单问题（调一次工具）
-# run_agent_verbose("北京天气怎么样？")
+run_agent_verbose("东京天气怎么样？")
 
 # 测试：需要计算的问题
 # run_agent_verbose("帮我算一下 (100 + 200) * 0.8 等于多少")
