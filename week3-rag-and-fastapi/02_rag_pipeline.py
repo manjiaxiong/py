@@ -302,83 +302,83 @@ for query in test_queries:
 #     return { answer, sources: docs.map(d => d.source) };          // 返回
 # }
 
-# print("\n=== 6. RAG 问答（完整 Pipeline）===\n")
-#
-# # --- 初始化 LLM 客户端 ---
-# client_ai, MODEL = get_client(Path(__file__).parent / ".env")
-#
-# def rag_query(question, n_results=3):
-#     """
-#     完整 RAG 问答函数
-#
-#     流程: 检索 → 构造 prompt → 调 LLM → 返回回答 + 来源
-#
-#     参数:
-#         question: 用户的问题
-#         n_results: 检索多少条相关文档（top-k）
-#
-#     返回:
-#         (answer, sources) — 回答文本 + 引用来源列表
-#
-#     JS 类比：
-#     async function ragQuery(question, nResults = 3) {
-#         const results = await collection.query(question, nResults);
-#         const context = results.documents.join("\n\n---\n\n");
-#         const answer = await llm.chat(buildPrompt(context, question));
-#         const sources = [...new Set(results.metadatas.map(m => m.source))];
-#         return { answer, sources };
-#     }
-#     """
-#     # Step 1: 检索相关文档
-#     results = collection.query(
-#         query_texts=[question],
-#         n_results=n_results,
-#     )
-#
-#     # Step 2: 拼接 context（用分隔线隔开多个文档块）
-#     # JS 类比: docs.join("\n\n---\n\n")
-#     context = "\n\n---\n\n".join(results["documents"][0])
-#
-#     # Step 3: 构造 RAG prompt
-#     # 关键：告诉 AI "只根据给定文档回答"，不要编造
-#     rag_prompt = f"""请根据以下参考文档回答用户的问题。
-#
-# 要求：
-# 1. 只使用参考文档中的信息回答，不要编造
-# 2. 如果文档中没有相关信息，明确说"根据现有文档无法回答这个问题"
-# 3. 回答时引用文档中的具体内容
-# 4. 用简洁清晰的中文回答
-#
-# 参考文档：
-# {context}
-#
-# 用户问题：{question}"""
-#
-#     # Step 4: 调 LLM 生成回答
-#     answer = ask(client_ai, MODEL, rag_prompt, max_tokens=800)
-#
-#     # Step 5: 收集来源（去重）
-#     # JS 类比: [...new Set(metadatas.map(m => m.source))]
-#     sources = list(set(
-#         meta["source"] for meta in results["metadatas"][0]
-#     ))
-#
-#     return answer, sources
-#
-#
-# # --- 测试 RAG 问答 ---
-# questions = [
-#     "React 中 useEffect 有什么用？怎么用？",
-#     "Python 有哪些常用的数据结构操作技巧？",
-#     "设计 RESTful API 时，状态码应该怎么选择？",
-# ]
-#
-# for q in questions:
-#     print(f"问题: {q}")
-#     print("-" * 50)
-#
-#     answer, sources = rag_query(q)
-#
-#     print(f"回答:\n{answer}\n")
-#     print(f"引用来源: {', '.join(sources)}")
-#     print("=" * 60 + "\n")
+print("\n=== 6. RAG 问答（完整 Pipeline）===\n")
+
+# --- 初始化 LLM 客户端 ---
+client_ai, MODEL = get_client(Path(__file__).parent / ".env")
+
+def rag_query(question, n_results=3):
+    """
+    完整 RAG 问答函数
+
+    流程: 检索 → 构造 prompt → 调 LLM → 返回回答 + 来源
+
+    参数:
+        question: 用户的问题
+        n_results: 检索多少条相关文档（top-k）
+
+    返回:
+        (answer, sources) — 回答文本 + 引用来源列表
+
+    JS 类比：
+    async function ragQuery(question, nResults = 3) {
+        const results = await collection.query(question, nResults);
+        const context = results.documents.join("\n\n---\n\n");
+        const answer = await llm.chat(buildPrompt(context, question));
+        const sources = [...new Set(results.metadatas.map(m => m.source))];
+        return { answer, sources };
+    }
+    """
+    # Step 1: 检索相关文档
+    results = collection.query(
+        query_texts=[question],
+        n_results=n_results,
+    )
+
+    # Step 2: 拼接 context（用分隔线隔开多个文档块）
+    # JS 类比: docs.join("\n\n---\n\n")
+    context = "\n\n---\n\n".join(results["documents"][0])
+
+    # Step 3: 构造 RAG prompt
+    # 关键：告诉 AI "只根据给定文档回答"，不要编造
+    rag_prompt = f"""请根据以下参考文档回答用户的问题。
+
+要求：
+1. 只使用参考文档中的信息回答，不要编造
+2. 如果文档中没有相关信息，明确说"根据现有文档无法回答这个问题"
+3. 回答时引用文档中的具体内容
+4. 用简洁清晰的中文回答
+
+参考文档：
+{context}
+
+用户问题：{question}"""
+
+    # Step 4: 调 LLM 生成回答
+    answer = ask(client_ai, MODEL, rag_prompt, max_tokens=800)
+
+    # Step 5: 收集来源（去重）
+    # JS 类比: [...new Set(metadatas.map(m => m.source))]
+    sources = list(set(
+        meta["source"] for meta in results["metadatas"][0]
+    ))
+
+    return answer, sources
+
+
+# --- 测试 RAG 问答 ---
+questions = [
+    "React 中 useEffect 有什么用？怎么用？",
+    "Python 有哪些常用的数据结构操作技巧？",
+    "设计 RESTful API 时，状态码应该怎么选择？",
+]
+
+for q in questions:
+    print(f"问题: {q}")
+    print("-" * 50)
+
+    answer, sources = rag_query(q)
+
+    print(f"回答:\n{answer}\n")
+    print(f"引用来源: {', '.join(sources)}")
+    print("=" * 60 + "\n")

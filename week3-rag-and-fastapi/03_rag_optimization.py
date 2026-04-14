@@ -133,38 +133,38 @@ print("  - 1000 字符：块少、上下文完整但噪音多\n")
 #
 # 一般建议：3-5 条，根据文档数量调整
 
-# print("\n=== 2. top-k 调整 ===\n")
-#
-# client_ai, MODEL = get_client(Path(__file__).parent / ".env")
-#
-# # 用 500 字符的分块做实验
-# collection_500 = chroma_client.get_or_create_collection(name="chunk_500")
-# query = "React 的常用 Hooks 有哪些？"
-#
-# for k in [1, 3, 5]:
-#     results = collection_500.query(query_texts=[query], n_results=k)
-#     context = "\n\n---\n\n".join(results["documents"][0])
-#
-#     # 用 LLM 基于检索结果回答
-#     rag_prompt = f"""根据以下参考文档回答用户问题。只使用文档中的信息，不要编造。
-#
-# 参考文档：
-# {context}
-#
-# 用户问题：{query}"""
-#
-#     answer = ask(client_ai, MODEL, rag_prompt, max_tokens=300)
-#
-#     print(f"--- top_k = {k} ---")
-#     print(f"检索到 {len(results['documents'][0])} 个片段")
-#     print(f"上下文总长度: {len(context)} 字符")
-#     print(f"AI 回答: {answer[:150]}...")
-#     print()
-#
-# print("观察：")
-# print("  - k=1：回答可能不完整，只基于一个片段")
-# print("  - k=3：通常最佳，信息充分且噪音少")
-# print("  - k=5：信息最多，但可能引入不相关内容\n")
+print("\n=== 2. top-k 调整 ===\n")
+
+client_ai, MODEL = get_client(Path(__file__).parent / ".env")
+
+# 用 500 字符的分块做实验
+collection_500 = chroma_client.get_or_create_collection(name="chunk_500")
+query = "React 的常用 Hooks 有哪些？"
+
+for k in [1, 3, 5]:
+    results = collection_500.query(query_texts=[query], n_results=k)
+    context = "\n\n---\n\n".join(results["documents"][0])
+
+    # 用 LLM 基于检索结果回答
+    rag_prompt = f"""根据以下参考文档回答用户问题。只使用文档中的信息，不要编造。
+
+参考文档：
+{context}
+
+用户问题：{query}"""
+
+    answer = ask(client_ai, MODEL, rag_prompt, max_tokens=300)
+
+    print(f"--- top_k = {k} ---")
+    print(f"检索到 {len(results['documents'][0])} 个片段")
+    print(f"上下文总长度: {len(context)} 字符")
+    print(f"AI 回答: {answer[:150]}...")
+    print()
+
+print("观察：")
+print("  - k=1：回答可能不完整，只基于一个片段")
+print("  - k=3：通常最佳，信息充分且噪音少")
+print("  - k=5：信息最多，但可能引入不相关内容\n")
 
 
 # ===========================================
@@ -181,69 +181,69 @@ print("  - 1000 字符：块少、上下文完整但噪音多\n")
 #
 # 实现方式：在 metadata 中存文件名，检索时一起返回
 
-# print("\n=== 3. 引用来源展示 ===\n")
-#
-# client_ai, MODEL = get_client(Path(__file__).parent / ".env")
-# chroma_src = chromadb.Client()
-#
-# # --- 建索引时存入来源信息 ---
-# src_collection = chroma_src.create_collection(name="with_source")
-#
-# all_chunks = []
-# all_ids = []
-# all_metadatas = []
-#
-# for doc_path in doc_dir.glob("*.md"):
-#     text = doc_path.read_text(encoding="utf-8")
-#     chunks = chunk_by_size(text, chunk_size=500, overlap=50)
-#     for i, chunk in enumerate(chunks):
-#         all_chunks.append(chunk)
-#         all_ids.append(f"{doc_path.stem}_{i}")
-#         all_metadatas.append({
-#             "source": doc_path.name,          # 来源文件名
-#             "chunk_index": i,                   # 第几块
-#         })
-#
-# src_collection.add(
-#     documents=all_chunks,
-#     ids=all_ids,
-#     metadatas=all_metadatas,
-# )
-#
-# # --- 检索并展示来源 ---
-# query = "Python 的异步编程怎么用？"
-# results = src_collection.query(query_texts=[query], n_results=3)
-#
-# print(f"问题: {query}\n")
-#
-# # 构造带来源的上下文
-# context_parts = []
-# print("📎 检索到的参考来源：")
-# for i, (doc, meta, dist) in enumerate(zip(
-#     results["documents"][0],
-#     results["metadatas"][0],
-#     results["distances"][0],
-# )):
-#     print(f"  [{i+1}] 来源: {meta['source']} (第 {meta['chunk_index']+1} 块)")
-#     print(f"      距离: {dist:.4f}")
-#     print(f"      内容: {doc[:80].replace(chr(10), ' ')}...")
-#     print()
-#     context_parts.append(f"[来源: {meta['source']}]\n{doc}")
-#
-# # --- 让 AI 带引用回答 ---
-# context = "\n\n---\n\n".join(context_parts)
-# rag_prompt = f"""根据以下参考文档回答用户问题。
-# 要求：
-# 1. 只使用文档中的信息
-# 2. 回答末尾标注引用来源（文件名）
-#
-# 参考文档：
-# {context}
-#
-# 用户问题：{query}"""
-#
-# answer = ask(client_ai, MODEL, rag_prompt, max_tokens=500)
-# print(f"AI 回答：\n{answer}\n")
+print("\n=== 3. 引用来源展示 ===\n")
+
+client_ai, MODEL = get_client(Path(__file__).parent / ".env")
+chroma_src = chromadb.Client()
+
+# --- 建索引时存入来源信息 ---
+src_collection = chroma_src.create_collection(name="with_source")
+
+all_chunks = []
+all_ids = []
+all_metadatas = []
+
+for doc_path in doc_dir.glob("*.md"):
+    text = doc_path.read_text(encoding="utf-8")
+    chunks = chunk_by_size(text, chunk_size=500, overlap=50)
+    for i, chunk in enumerate(chunks):
+        all_chunks.append(chunk)
+        all_ids.append(f"{doc_path.stem}_{i}")
+        all_metadatas.append({
+            "source": doc_path.name,          # 来源文件名
+            "chunk_index": i,                   # 第几块
+        })
+
+src_collection.add(
+    documents=all_chunks,
+    ids=all_ids,
+    metadatas=all_metadatas,
+)
+
+# --- 检索并展示来源 ---
+query = "Python  "
+results = src_collection.query(query_texts=[query], n_results=3)
+
+print(f"问题: {query}\n")
+
+# 构造带来源的上下文
+context_parts = []
+print("📎 检索到的参考来源：")
+for i, (doc, meta, dist) in enumerate(zip(
+    results["documents"][0],
+    results["metadatas"][0],
+    results["distances"][0],
+)):
+    print(f"  [{i+1}] 来源: {meta['source']} (第 {meta['chunk_index']+1} 块)")
+    print(f"      距离: {dist:.4f}")
+    print(f"      内容: {doc[:80].replace(chr(10), ' ')}...")
+    print()
+    context_parts.append(f"[来源: {meta['source']}]\n{doc}")
+
+# --- 让 AI 带引用回答 ---
+context = "\n\n---\n\n".join(context_parts)
+rag_prompt = f"""根据以下参考文档回答用户问题。
+要求：
+1. 只使用文档中的信息
+2. 回答末尾标注引用来源（文件名）
+
+参考文档：
+{context}
+
+用户问题：{query}"""
+
+answer = ask(client_ai, MODEL, rag_prompt, max_tokens=500)
+print(f"AI 回答：\n{answer}\n")
 
 
 # ===========================================
@@ -266,96 +266,96 @@ print("  - 1000 字符：块少、上下文完整但噪音多\n")
 # - 0.5 ~ 1.0 : 一般相关
 # - > 1.5 : 基本不相关（阈值因模型而异，需要实验）
 
-# print("\n=== 4. 相似度阈值 ===\n")
-#
-# # 复用第 3 节的 collection
-# # 测试不同问题的距离
-# test_queries = [
-#     "React 的 Hooks 有哪些？",      # 文档中有 → 距离应该小
-#     "Python 异步编程怎么用？",        # 文档中有 → 距离应该小
-#     "量子计算的原理是什么？",          # 文档中没有 → 距离应该大
-#     "怎么炒宫保鸡丁？",              # 完全无关 → 距离应该很大
-# ]
-#
-# DISTANCE_THRESHOLD = 1.5  # 距离阈值，需要根据实际情况调整
-#
-# for q in test_queries:
-#     results = src_collection.query(query_texts=[q], n_results=1)
-#     distance = results["distances"][0][0]
-#     doc = results["documents"][0][0]
-#     source = results["metadatas"][0][0]["source"]
-#
-#     # 判断是否通过阈值
-#     is_relevant = distance < DISTANCE_THRESHOLD
-#
-#     print(f"问题: {q}")
-#     print(f"  最近距离: {distance:.4f}")
-#     print(f"  最近来源: {source}")
-#     if is_relevant:
-#         print(f"  ✅ 通过阈值 (< {DISTANCE_THRESHOLD})，可以回答")
-#     else:
-#         print(f"  ❌ 未通过阈值 (>= {DISTANCE_THRESHOLD})，拒绝回答")
-#         print(f"  → 回复: '文档中未找到相关信息'")
-#     print()
-#
-# # --- 封装成可复用的 RAG 函数 ---
-# def rag_with_threshold(collection, query, client, model,
-#                        n_results=3, threshold=1.5):
-#     """
-#     带阈值过滤的 RAG
-#
-#     JS 类比：
-#     async function ragQuery(query, { nResults, threshold }) {
-#       const results = await search(query, nResults);
-#       const relevant = results.filter(r => r.distance < threshold);
-#       if (relevant.length === 0) return "文档中未找到相关信息";
-#       return await askAI(relevant, query);
-#     }
-#     """
-#     results = collection.query(query_texts=[query], n_results=n_results)
-#
-#     # 过滤：只保留距离小于阈值的结果
-#     filtered_docs = []
-#     filtered_metas = []
-#     for doc, meta, dist in zip(
-#         results["documents"][0],
-#         results["metadatas"][0],
-#         results["distances"][0],
-#     ):
-#         if dist < threshold:
-#             filtered_docs.append(doc)
-#             filtered_metas.append(meta)
-#
-#     # 如果没有相关结果，直接拒绝
-#     if not filtered_docs:
-#         return "文档中未找到相关信息，无法回答该问题。"
-#
-#     # 拼接上下文
-#     context = "\n\n---\n\n".join(
-#         f"[来源: {m['source']}]\n{d}"
-#         for d, m in zip(filtered_docs, filtered_metas)
-#     )
-#
-#     rag_prompt = f"""根据以下参考文档回答用户问题。
-# 只使用文档中的信息，不要编造。回答末尾标注引用来源。
-#
-# 参考文档：
-# {context}
-#
-# 用户问题：{query}"""
-#
-#     return ask(client, model, rag_prompt, max_tokens=500)
-#
-#
-# # 测试带阈值的 RAG
-# client_ai, MODEL = get_client(Path(__file__).parent / ".env")
-#
-# print("--- 带阈值的 RAG 测试 ---\n")
-# for q in ["React 的性能优化方法？", "怎么炒宫保鸡丁？"]:
-#     answer = rag_with_threshold(src_collection, q, client_ai, MODEL)
-#     print(f"问题: {q}")
-#     print(f"回答: {answer[:200]}")
-#     print()
+print("\n=== 4. 相似度阈值 ===\n")
+
+# 复用第 3 节的 collection
+# 测试不同问题的距离
+test_queries = [
+    "React 的 Hooks 有哪些？",      # 文档中有 → 距离应该小
+    "Python 异步编程怎么用？",        # 文档中有 → 距离应该小
+    "量子计算的原理是什么？",          # 文档中没有 → 距离应该大
+    "怎么炒宫保鸡丁？",              # 完全无关 → 距离应该很大
+]
+
+DISTANCE_THRESHOLD = 1.5  # 距离阈值，需要根据实际情况调整
+
+for q in test_queries:
+    results = src_collection.query(query_texts=[q], n_results=1)
+    distance = results["distances"][0][0]
+    doc = results["documents"][0][0]
+    source = results["metadatas"][0][0]["source"]
+
+    # 判断是否通过阈值
+    is_relevant = distance < DISTANCE_THRESHOLD
+
+    print(f"问题: {q}")
+    print(f"  最近距离: {distance:.4f}")
+    print(f"  最近来源: {source}")
+    if is_relevant:
+        print(f"  ✅ 通过阈值 (< {DISTANCE_THRESHOLD})，可以回答")
+    else:
+        print(f"  ❌ 未通过阈值 (>= {DISTANCE_THRESHOLD})，拒绝回答")
+        print(f"  → 回复: '文档中未找到相关信息'")
+    print()
+
+# --- 封装成可复用的 RAG 函数 ---
+def rag_with_threshold(collection, query, client, model,
+                       n_results=3, threshold=1.5):
+    """
+    带阈值过滤的 RAG
+
+    JS 类比：
+    async function ragQuery(query, { nResults, threshold }) {
+      const results = await search(query, nResults);
+      const relevant = results.filter(r => r.distance < threshold);
+      if (relevant.length === 0) return "文档中未找到相关信息";
+      return await askAI(relevant, query);
+    }
+    """
+    results = collection.query(query_texts=[query], n_results=n_results)
+
+    # 过滤：只保留距离小于阈值的结果
+    filtered_docs = []
+    filtered_metas = []
+    for doc, meta, dist in zip(
+        results["documents"][0],
+        results["metadatas"][0],
+        results["distances"][0],
+    ):
+        if dist < threshold:
+            filtered_docs.append(doc)
+            filtered_metas.append(meta)
+
+    # 如果没有相关结果，直接拒绝
+    if not filtered_docs:
+        return "文档中未找到相关信息，无法回答该问题。"
+
+    # 拼接上下文
+    context = "\n\n---\n\n".join(
+        f"[来源: {m['source']}]\n{d}"
+        for d, m in zip(filtered_docs, filtered_metas)
+    )
+
+    rag_prompt = f"""根据以下参考文档回答用户问题。
+只使用文档中的信息，不要编造。回答末尾标注引用来源。
+
+参考文档：
+{context}
+
+用户问题：{query}"""
+
+    return ask(client, model, rag_prompt, max_tokens=500)
+
+
+# 测试带阈值的 RAG
+client_ai, MODEL = get_client(Path(__file__).parent / ".env")
+
+print("--- 带阈值的 RAG 测试 ---\n")
+for q in ["React 的性能优化方法？", "怎么炒宫保鸡丁？"]:
+    answer = rag_with_threshold(src_collection, q, client_ai, MODEL)
+    print(f"问题: {q}")
+    print(f"回答: {answer[:200]}")
+    print()
 
 
 # ===========================================
@@ -396,34 +396,34 @@ print("  - 1000 字符：块少、上下文完整但噪音多\n")
 # 注意：本节只介绍概念，不实际实现
 # 因为 Rerank 模型需要额外安装和下载，我们重点理解思路
 
-# print("\n=== 5. Rerank 概念介绍 ===\n")
-#
-# print("Bi-encoder vs Cross-encoder：")
-# print()
-# print("  Bi-encoder（当前方案）:")
-# print("    查询 → [向量]  ←比较距离→  [向量] ← 文档")
-# print("    特点：快（可以预计算文档向量），精度一般")
-# print()
-# print("  Cross-encoder（Rerank）:")
-# print("    [查询 + 文档] → 一起输入模型 → 相关性分数")
-# print("    特点：慢（每对都要重新计算），精度高")
-# print()
-# print("  实际使用：先 Bi-encoder 召回 20 条，再 Cross-encoder 精排取 3 条")
-# print()
-# print("  伪代码：")
-# print("  # Step 1: 粗排（Bi-encoder，我们已经会了）")
-# print("  candidates = collection.query(query, n_results=20)")
-# print()
-# print("  # Step 2: 精排（Cross-encoder）")
-# print("  # from sentence_transformers import CrossEncoder")
-# print("  # reranker = CrossEncoder('BAAI/bge-reranker-base')")
-# print("  # pairs = [[query, doc] for doc in candidates]")
-# print("  # scores = reranker.predict(pairs)")
-# print("  # top3 = sorted(zip(scores, candidates), reverse=True)[:3]")
-# print()
-# print("  什么时候需要 Rerank？")
-# print("  - 文档量大（> 1000 条）且检索精度不够时")
-# print("  - 简单项目不需要，先把 chunk_size 和 top_k 调好\n")
+print("\n=== 5. Rerank 概念介绍 ===\n")
+
+print("Bi-encoder vs Cross-encoder：")
+print()
+print("  Bi-encoder（当前方案）:")
+print("    查询 → [向量]  ←比较距离→  [向量] ← 文档")
+print("    特点：快（可以预计算文档向量），精度一般")
+print()
+print("  Cross-encoder（Rerank）:")
+print("    [查询 + 文档] → 一起输入模型 → 相关性分数")
+print("    特点：慢（每对都要重新计算），精度高")
+print()
+print("  实际使用：先 Bi-encoder 召回 20 条，再 Cross-encoder 精排取 3 条")
+print()
+print("  伪代码：")
+print("  # Step 1: 粗排（Bi-encoder，我们已经会了）")
+print("  candidates = collection.query(query, n_results=20)")
+print()
+print("  # Step 2: 精排（Cross-encoder）")
+print("  # from sentence_transformers import CrossEncoder")
+print("  # reranker = CrossEncoder('BAAI/bge-reranker-base')")
+print("  # pairs = [[query, doc] for doc in candidates]")
+print("  # scores = reranker.predict(pairs)")
+print("  # top3 = sorted(zip(scores, candidates), reverse=True)[:3]")
+print()
+print("  什么时候需要 Rerank？")
+print("  - 文档量大（> 1000 条）且检索精度不够时")
+print("  - 简单项目不需要，先把 chunk_size 和 top_k 调好\n")
 
 
 # ===========================================
@@ -454,31 +454,31 @@ print("  - 1000 字符：块少、上下文完整但噪音多\n")
 # - 检索评估 = 单元测试（搜索功能本身对不对？）
 # - 生成评估 = 集成测试（整个流程跑通，最终结果对不对？）
 
-# print("\n=== 6. 评估 RAG ===\n")
-#
-# client_ai, MODEL = get_client(Path(__file__).parent / ".env")
-# chroma_eval = chromadb.Client()
-#
-# # --- Step 1: 建索引（复用前面的逻辑）---
-# eval_collection = chroma_eval.create_collection(name="eval_rag")
-#
-# all_chunks = []
-# all_ids = []
-# all_metadatas = []
-#
-# for doc_path in doc_dir.glob("*.md"):
-#     text = doc_path.read_text(encoding="utf-8")
-#     chunks = chunk_by_size(text, chunk_size=500, overlap=50)
-#     for i, chunk in enumerate(chunks):
-#         all_chunks.append(chunk)
-#         all_ids.append(f"{doc_path.stem}_{i}")
-#         all_metadatas.append({"source": doc_path.name})
-#
-# eval_collection.add(
-#     documents=all_chunks,
-#     ids=all_ids,
-#     metadatas=all_metadatas,
-# )
+print("\n=== 6. 评估 RAG ===\n")
+
+client_ai, MODEL = get_client(Path(__file__).parent / ".env")
+chroma_eval = chromadb.Client()
+
+# --- Step 1: 建索引（复用前面的逻辑）---
+eval_collection = chroma_eval.create_collection(name="eval_rag")
+
+all_chunks = []
+all_ids = []
+all_metadatas = []
+
+for doc_path in doc_dir.glob("*.md"):
+    text = doc_path.read_text(encoding="utf-8")
+    chunks = chunk_by_size(text, chunk_size=500, overlap=50)
+    for i, chunk in enumerate(chunks):
+        all_chunks.append(chunk)
+        all_ids.append(f"{doc_path.stem}_{i}")
+        all_metadatas.append({"source": doc_path.name})
+
+eval_collection.add(
+    documents=all_chunks,
+    ids=all_ids,
+    metadatas=all_metadatas,
+)
 #
 # # --- Step 2: 定义评估集（3 组 QA 对）---
 # # 每组包含：问题、期望来源文件、期望答案关键词

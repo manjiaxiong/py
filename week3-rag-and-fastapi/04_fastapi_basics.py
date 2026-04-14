@@ -223,30 +223,30 @@ class ArticleCreate(BaseModel):
     tags: list[str] = Field(default=[], description="标签列表")
 
 # --- POST 路由 ---
-# @app.post("/articles")
-# def create_article(article: ArticleCreate):
-#     """
-#     创建文章
-#
-#     Express 等价：
-#     app.post("/articles", (req, res) => {
-#         const validated = schema.parse(req.body)  // Zod 校验
-#         res.status(201).json({ id: 1, ...validated })
-#     })
-#
-#     FastAPI 自动做了：
-#     1. 解析 JSON body → ArticleCreate 实例
-#     2. 校验每个字段（title 长度、content 不为空等）
-#     3. 校验失败 → 自动返回 422 + 详细错误信息
-#     4. 校验通过 → article 参数是类型安全的 Pydantic 对象
-#     """
-#     # article.title, article.content, article.tags 都是类型安全的
-#     return {
-#         "id": 1,
-#         "status": "created",
-#         **article.model_dump(),  # Pydantic v2 的 model_dump() = v1 的 .dict()
-#     }
-#
+@app.post("/articles")
+def create_article(article: ArticleCreate):
+    """
+    创建文章
+
+    Express 等价：
+    app.post("/articles", (req, res) => {
+        const validated = schema.parse(req.body)  // Zod 校验
+        res.status(201).json({ id: 1, ...validated })
+    })
+
+    FastAPI 自动做了：
+    1. 解析 JSON body → ArticleCreate 实例
+    2. 校验每个字段（title 长度、content 不为空等）
+    3. 校验失败 → 自动返回 422 + 详细错误信息
+    4. 校验通过 → article 参数是类型安全的 Pydantic 对象
+    """
+    # article.title, article.content, article.tags 都是类型安全的
+    return {
+        "id": 1,
+        "status": "created",
+        **article.model_dump(),  # Pydantic v2 的 model_dump() = v1 的 .dict()
+    }
+
 # # 测试:
 # # curl -X POST http://localhost:8000/articles \
 # #   -H "Content-Type: application/json" \
@@ -305,26 +305,26 @@ fake_db = {
     }
 }
 
-# @app.get("/articles/{article_id}", response_model=ArticleDetail)
-# def get_article(article_id: int):
-#     """
-#     获取文章详情
-#
-#     Express 等价（需要手动过滤字段）：
-#     app.get("/articles/:id", (req, res) => {
-#         const article = db[req.params.id]
-#         const { password_hash, ...safe } = article  // 手动排除敏感字段
-#         res.json(safe)
-#     })
-#
-#     FastAPI 的 response_model 自动过滤！
-#     即使 fake_db 里有 password_hash，返回时会被自动移除
-#     因为 ArticleDetail 模型中没有定义 password_hash 字段
-#     """
-#     if article_id not in fake_db:
-#         # 类似 Express 的 res.status(404).json(...)
-#         return JSONResponse(status_code=404, content={"error": "文章不存在"})
-#     return fake_db[article_id]  # 返回完整 dict，FastAPI 自动按 response_model 过滤
+@app.get("/articles/{article_id}", response_model=ArticleDetail)
+def get_article(article_id: int):
+    """
+    获取文章详情
+
+    Express 等价（需要手动过滤字段）：
+    app.get("/articles/:id", (req, res) => {
+        const article = db[req.params.id]
+        const { password_hash, ...safe } = article  // 手动排除敏感字段
+        res.json(safe)
+    })
+
+    FastAPI 的 response_model 自动过滤！
+    即使 fake_db 里有 password_hash，返回时会被自动移除
+    因为 ArticleDetail 模型中没有定义 password_hash 字段
+    """
+    if article_id not in fake_db:
+        # 类似 Express 的 res.status(404).json(...)
+        return JSONResponse(status_code=404, content={"error": "文章不存在"})
+    return fake_db[article_id]  # 返回完整 dict，FastAPI 自动按 response_model 过滤
 
 
 # ===========================================
@@ -380,129 +380,135 @@ class AskResponse(BaseModel):
     sources: list[dict]
     question: str
 
+
+# --- 统一响应格式 ---
+def success(data=None, msg="success"):
+    """成功响应 — {"code": 0, "msg": "success", "data": ...}"""
+    return {"code": 0, "msg": msg, "data": data}
+
+def error(code=500, msg="服务器错误", data=None):
+    """错误响应 — {"code": 500, "msg": "...", "data": null}"""
+    return {"code": code, "msg": msg, "data": data}
+
 # --- 文档索引端点 ---
-# @app.post("/index", response_model=IndexResponse)
-# def index_document(req: IndexRequest):
-#     """
-#     索引文档 — 把文本分块后存入向量库
-#
-#     流程：
-#     1. 收到文本 → 按段落分块
-#     2. 每个块存入 ChromaDB（自动 embedding）
-#     3. 返回分块数量
-#
-#     JS 前端调用：
-#     await fetch("/index", {
-#         method: "POST",
-#         headers: { "Content-Type": "application/json" },
-#         body: JSON.stringify({
-#             text: "你的文档内容...",
-#             source: "readme.md"
-#         })
-#     })
-#     """
-#     # 按段落分块
-#     paragraphs = [p.strip() for p in req.text.split("\n\n") if p.strip() and len(p.strip()) > 20]
-#
-#     if not paragraphs:
-#         # 如果没有段落分隔，按固定大小分块
-#         paragraphs = []
-#         for i in range(0, len(req.text), req.chunk_size):
-#             chunk = req.text[i:i + req.chunk_size].strip()
-#             if chunk:
-#                 paragraphs.append(chunk)
-#
-#     if not paragraphs:
-#         return JSONResponse(status_code=400, content={"error": "文档内容太短或为空"})
-#
-#     # 生成唯一 ID（防止重复添加）
-#     import hashlib
-#     base_id = hashlib.md5(req.source.encode()).hexdigest()[:8]
-#     ids = [f"{base_id}_{i}" for i in range(len(paragraphs))]
-#     metadatas = [{"source": req.source, "chunk_index": i} for i in range(len(paragraphs))]
-#
-#     # 存入向量库（Chroma 自动做 embedding）
-#     collection.upsert(
-#         documents=paragraphs,
-#         ids=ids,
-#         metadatas=metadatas,
-#     )
-#
-#     return IndexResponse(
-#         message=f"文档 '{req.source}' 索引成功",
-#         chunks_count=len(paragraphs),
-#         source=req.source,
-#     )
+@app.post("/index", response_model=IndexResponse)
+def index_document(req: IndexRequest):
+    """
+    索引文档 — 把文本分块后存入向量库
+
+    流程：
+    1. 收到文本 → 按段落分块
+    2. 每个块存入 ChromaDB（自动 embedding）
+    3. 返回分块数量
+
+    JS 前端调用：
+    await fetch("/index", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            text: "你的文档内容...",
+            source: "readme.md"
+        })
+    })
+    """
+    # 按段落分块
+    paragraphs = [p.strip() for p in req.text.split("\n\n") if p.strip() and len(p.strip()) > 20]
+
+    if not paragraphs:
+        # 如果没有段落分隔，按固定大小分块
+        paragraphs = []
+        for i in range(0, len(req.text), req.chunk_size):
+            chunk = req.text[i:i + req.chunk_size].strip()
+            if chunk:
+                paragraphs.append(chunk)
+
+    if not paragraphs:
+        return JSONResponse(status_code=400, content={"error": "文档内容太短或为空"})
+
+    # 生成唯一 ID（防止重复添加）
+    import hashlib
+    base_id = hashlib.md5(req.source.encode()).hexdigest()[:8]
+    ids = [f"{base_id}_{i}" for i in range(len(paragraphs))]
+    metadatas = [{"source": req.source, "chunk_index": i} for i in range(len(paragraphs))]
+
+    # 存入向量库（Chroma 自动做 embedding）
+    collection.upsert(
+        documents=paragraphs,
+        ids=ids,
+        metadatas=metadatas,
+    )
+
+    return IndexResponse(
+        message=f"文档 '{req.source}' 索引成功",
+        chunks_count=len(paragraphs),
+        source=req.source,
+    )
 
 # --- RAG 提问端点 ---
-# @app.post("/ask", response_model=AskResponse)
-# def ask_question(req: AskRequest):
-#     """
-#     RAG 提问 — 检索相关文档 + AI 生成回答
-#
-#     流程：
-#     1. 用户问题 → ChromaDB 检索 top_k 个相关文档块
-#     2. 把检索结果拼接成 context
-#     3. 构造 RAG prompt → 调 AI 生成回答
-#     4. 返回回答 + 来源信息
-#
-#     JS 前端调用：
-#     const { answer, sources } = await fetch("/ask", {
-#         method: "POST",
-#         body: JSON.stringify({ question: "什么是 RAG？", top_k: 3 })
-#     }).then(r => r.json())
-#     """
-#     # 检查向量库是否有数据
-#     if collection.count() == 0:
-#         return AskResponse(
-#             answer="向量库为空，请先通过 /index 接口添加文档",
-#             sources=[],
-#             question=req.question,
-#         )
-#
-#     # Step 1: 检索相关文档
-#     results = collection.query(
-#         query_texts=[req.question],
-#         n_results=min(req.top_k, collection.count()),
-#     )
-#
-#     # Step 2: 拼接 context
-#     context_parts = []
-#     sources = []
-#     for i, (doc, meta, dist) in enumerate(zip(
-#         results["documents"][0],
-#         results["metadatas"][0],
-#         results["distances"][0],
-#     )):
-#         context_parts.append(f"[片段 {i+1}] {doc}")
-#         sources.append({
-#             "content": doc[:200],
-#             "source": meta.get("source", "unknown"),
-#             "relevance": round(1 / (1 + dist), 4),  # 距离转相关度
-#         })
-#
-#     context = "\n\n".join(context_parts)
-#
-#     # Step 3: 构造 RAG prompt
-#     rag_prompt = f"""根据以下参考文档回答用户的问题。
-# 规则：
-# 1. 只基于提供的文档内容回答
-# 2. 如果文档中没有相关信息，明确说"根据现有文档无法回答"
-# 3. 回答时引用文档中的具体内容
-#
-# 参考文档：
-# {context}
-#
-# 用户问题：{req.question}"""
-#
-#     # Step 4: 调 AI 生成回答
-#     answer = ask(ai_client, AI_MODEL, rag_prompt, max_tokens=1000)
-#
-#     return AskResponse(
-#         answer=answer,
-#         sources=sources,
-#         question=req.question,
-#     )
+@app.post("/ask")
+def ask_question(req: AskRequest):
+    """
+    RAG 提问 — 检索相关文档 + AI 生成回答
+
+    流程：
+    1. 用户问题 → ChromaDB 检索 top_k 个相关文档块
+    2. 把检索结果拼接成 context
+    3. 构造 RAG prompt → 调 AI 生成回答
+    4. 返回统一格式 {"code": 0, "msg": "success", "data": {...}}
+
+    JS 前端调用：
+    const { code, msg, data } = await fetch("/ask", {
+        method: "POST",
+        body: JSON.stringify({ question: "什么是 RAG？", top_k: 3 })
+    }).then(r => r.json())
+    """
+    # 检查向量库是否有数据
+    if collection.count() == 0:
+        return error(code=400, msg="向量库为空，请先通过 /index 接口添加文档")
+
+    # Step 1: 检索相关文档
+    results = collection.query(
+        query_texts=[req.question],
+        n_results=min(req.top_k, collection.count()),
+    )
+
+    # Step 2: 拼接 context
+    context_parts = []
+    sources = []
+    for i, (doc, meta, dist) in enumerate(zip(
+        results["documents"][0],
+        results["metadatas"][0],
+        results["distances"][0],
+    )):
+        context_parts.append(f"[片段 {i+1}] {doc}")
+        sources.append({
+            "content": doc[:200],
+            "source": meta.get("source", "unknown"),
+            "relevance": round(1 / (1 + dist), 4),  # 距离转相关度
+        })
+
+    context = "\n\n".join(context_parts)
+
+    # Step 3: 构造 RAG prompt
+    rag_prompt = f"""根据以下参考文档回答用户的问题。
+规则：
+1. 只基于提供的文档内容回答
+2. 如果文档中没有相关信息，明确说"根据现有文档无法回答"
+3. 回答时引用文档中的具体内容
+
+参考文档：
+{context}
+
+用户问题：{req.question}"""
+
+    # Step 4: 调 AI 生成回答
+    answer = ask(ai_client, AI_MODEL, rag_prompt, max_tokens=1000)
+
+    return success(data={
+        "answer": answer,
+        "sources": sources,
+        "question": req.question,
+    })
 
 
 # ===========================================
@@ -538,82 +544,82 @@ import asyncio
 from fastapi.responses import StreamingResponse
 
 # --- 方法 1: 使用 StreamingResponse（FastAPI 内置）---
-# @app.post("/stream/basic")
-# async def stream_basic(req: AskRequest):
-#     """
-#     基础流式输出 — 使用 FastAPI 内置的 StreamingResponse
-#
-#     Express 等价：
-#     app.post("/stream/basic", (req, res) => {
-#         res.setHeader("Content-Type", "text/event-stream")
-#         res.setHeader("Cache-Control", "no-cache")
-#         // 逐段发送
-#         for (const chunk of chunks) {
-#             res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`)
-#         }
-#         res.end()
-#     })
-#     """
-#     async def generate():
-#         """
-#         async generator — Python 的异步生成器
-#
-#         JS 类比：
-#         async function* generate() {
-#             yield "data: chunk1\n\n"
-#             yield "data: chunk2\n\n"
-#         }
-#         """
-#         # 模拟 AI 流式输出（实际项目中用 client.messages.stream()）
-#         chunks = ["RAG ", "是检索", "增强生成", "的缩写，", "它让 AI ", "先查资料", "再回答。"]
-#         for chunk in chunks:
-#             # SSE 格式：每条消息以 "data: " 开头，以 "\n\n" 结尾
-#             yield f"data: {chunk}\n\n"
-#             await asyncio.sleep(0.3)  # 模拟延迟
-#         yield "data: [DONE]\n\n"
-#
-#     return StreamingResponse(
-#         generate(),
-#         media_type="text/event-stream",
-#         headers={
-#             "Cache-Control": "no-cache",
-#             "Connection": "keep-alive",
-#         },
-#     )
+@app.post("/stream/basic")
+async def stream_basic():
+    """
+    基础流式输出 — 使用 FastAPI 内置的 StreamingResponse
+
+    Express 等价：
+    app.post("/stream/basic", (req, res) => {
+        res.setHeader("Content-Type", "text/event-stream")
+        res.setHeader("Cache-Control", "no-cache")
+        // 逐段发送
+        for (const chunk of chunks) {
+            res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`)
+        }
+        res.end()
+    })
+    """
+    async def generate():
+        """
+        async generator — Python 的异步生成器
+
+        JS 类比：
+        async function* generate() {
+            yield "data: chunk1\n\n"
+            yield "data: chunk2\n\n"
+        }
+        """
+        # 模拟 AI 流式输出（实际项目中用 client.messages.stream()）
+        chunks = ["RAG ", "是检索", "增强生成", "的缩写，", "它让 AI ", "先查资料", "再回答。"]
+        for chunk in chunks:
+            # SSE 格式：每条消息以 "data: " 开头，以 "\n\n" 结尾
+            yield f"data: {chunk}\n\n"
+            await asyncio.sleep(0.3)  # 模拟延迟
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        },
+    )
 
 # --- 方法 2: 使用 sse-starlette（更标准的 SSE）---
-# from sse_starlette.sse import EventSourceResponse
-#
-# @app.post("/stream/sse")
-# async def stream_sse(req: AskRequest):
-#     """
-#     标准 SSE 输出 — 使用 sse-starlette 库
-#
-#     sse-starlette 自动处理：
-#     1. Content-Type 头
-#     2. 心跳保活（防止连接超时）
-#     3. 标准 SSE 格式
-#     """
-#     async def generate():
-#         # 实际项目中，这里调用 AI 的流式 API
-#         # 例如：
-#         # stream = client.messages.stream(
-#         #     model=MODEL,
-#         #     messages=[{"role": "user", "content": req.question}],
-#         #     max_tokens=500,
-#         # )
-#         # async for text in stream.text_stream:
-#         #     yield {"event": "message", "data": text}
-#
-#         # 这里用模拟数据演示
-#         answer_parts = ["根据文档，", "RAG（检索增强生成）", "是一种让 AI ", "先从知识库检索相关信息，",
-#                         "再基于检索结果", "生成回答的技术。"]
-#         for part in answer_parts:
-#             yield {"event": "message", "data": part}
-#             await asyncio.sleep(0.3)
-#         yield {"event": "done", "data": "[DONE]"}
-#
-#     return EventSourceResponse(generate())
+from sse_starlette.sse import EventSourceResponse
+
+@app.post("/stream/sse")
+async def stream_sse():
+    """
+    标准 SSE 输出 — 使用 sse-starlette 库
+
+    sse-starlette 自动处理：
+    1. Content-Type 头
+    2. 心跳保活（防止连接超时）
+    3. 标准 SSE 格式
+    """
+    async def generate():
+        # 实际项目中，这里调用 AI 的流式 API
+        # 例如：
+        # stream = client.messages.stream(
+        #     model=MODEL,
+        #     messages=[{"role": "user", "content": req.question}],
+        #     max_tokens=500,
+        # )
+        # async for text in stream.text_stream:
+        #     yield {"event": "message", "data": text}
+
+        # 这里用模拟数据演示
+        answer_parts = ["根据文档，", "RAG（检索增强生成）", "是一种让 AI ", "先从知识库检索相关信息，",
+                        "再基于检索结果", "生成回答的技术。"]
+        for part in answer_parts:
+            yield {"event": "message", "data": part}
+            await asyncio.sleep(0.3)
+        yield {"event": "done", "data": "[DONE]"}
+
+    return EventSourceResponse(generate())
 
 # 前端 JS 消费 SSE 的代码：
 # const evtSource = new EventSource("/stream/basic")
@@ -695,19 +701,26 @@ from fastapi import HTTPException
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc):
     """
-    全局 HTTP 异常处理器
+    全局 HTTP 异常处理器 — 统一返回 {code, msg, data}
 
     Express 等价：
     app.use((err, req, res, next) => {
-        res.status(err.status || 500).json({ error: err.message })
+        res.status(err.status || 500).json({ code: err.status, msg: err.message, data: null })
     })
     """
     return JSONResponse(
         status_code=exc.status_code,
-        content={
-            "error": exc.detail,
-            "status_code": exc.status_code,
-        },
+        content=error(code=exc.status_code, msg=exc.detail),
+    )
+
+from fastapi.exceptions import RequestValidationError
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    """捕获 Pydantic 422 校验错误"""
+    return JSONResponse(
+        status_code=422,
+        content=error(code=422, msg="参数校验失败", data=exc.errors()),
     )
 
 
@@ -741,13 +754,13 @@ print("  http://localhost:8000/docs  → API 文档（自动生成的 Swagger UI
 # 但更推荐用命令行启动（支持热重载）：
 #   uvicorn week3-rag-and-fastapi.04_fastapi_basics:app --reload
 
-# if __name__ == "__main__":
-#     import uvicorn
-#     # host="0.0.0.0" 允许局域网访问（类似 Express 的 app.listen(8000, "0.0.0.0")）
-#     # reload=True 文件变动自动重启（类似 nodemon）
-#     uvicorn.run(
-#         "week3-rag-and-fastapi.04_fastapi_basics:app",
-#         host="0.0.0.0",
-#         port=8000,
-#         reload=True,
-#     )
+if __name__ == "__main__":
+    import uvicorn
+    # host="0.0.0.0" 允许局域网访问（类似 Express 的 app.listen(8000, "0.0.0.0")）
+    # reload=True 文件变动自动重启（类似 nodemon）
+    uvicorn.run(
+        "week3-rag-and-fastapi.04_fastapi_basics:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+    )

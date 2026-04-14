@@ -31,3 +31,6 @@ Thumbs.db
 
 # Jupyter
 .ipynb_checkpoints/
+
+# ChromaDB 持久化数据
+chroma_db/
