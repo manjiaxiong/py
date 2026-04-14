@@ -32,7 +32,7 @@
             flex-direction: column;
         }
 
-        /* TODO 1: 完善 header 样式 */
+        /* Header 样式 */
         .header {
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border-color);
@@ -46,7 +46,7 @@
 
         .header h1 { font-size: 18px; font-weight: 600; }
 
-        /* TODO 2: 完善聊天容器样式 */
+        /* 聊天容器样式 */
         .chat-container {
             flex: 1;
             overflow-y: auto;
@@ -61,7 +61,7 @@
             gap: 16px;
         }
 
-        /* TODO 3: 完善消息气泡样式 */
+        /* 消息气泡样式 */
         .message {
             display: flex;
             gap: 10px;
@@ -69,7 +69,6 @@
         }
 
         .message.user {
-            /* TODO: 靠右对齐 */
             align-self: flex-end;
             flex-direction: row-reverse;
         }
@@ -84,6 +83,7 @@
             font-size: 14px;
             line-height: 1.6;
             word-break: break-word;
+            white-space: pre-wrap;
         }
 
         .message.user .bubble {
@@ -93,10 +93,14 @@
         }
 
         .message.ai .bubble {
-            /* TODO: 白色背景，灰色边框 */
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
             border-bottom-left-radius: 4px;
+        }
+
+        .typing {
+            color: var(--text-secondary);
+            font-style: italic;
         }
 
         /* 输入区域 */
@@ -218,33 +222,31 @@ const welcome = document.getElementById('welcome');
 
 let isStreaming = false;
 
-// TODO 1: 实现滚动到底部
+// 滚动到底部
 function scrollToBottom() {
-    // 提示: chatContainer.scrollTop = chatContainer.scrollHeight
+    chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-// TODO 2: 实现键盘快捷键（Enter 发送，Shift+Enter 换行）
+// 键盘快捷键（Enter 发送，Shift+Enter 换行）
 function handleKeyDown(e) {
-    // 提示: e.key === 'Enter' && !e.shiftKey 时 sendMessage
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         sendMessage();
     }
 }
 
-// TODO 3: 快捷问题
+// 快捷问题
 function askQuestion(text) {
     userInput.value = text;
     sendMessage();
 }
 
-// TODO 4: 添加用户消息到界面
+// 添加用户消息到界面
 function addUserMessage(text) {
     if (welcome) welcome.style.display = 'none';
 
     const div = document.createElement('div');
     div.className = 'message user';
-    // TODO: 创建 .bubble 元素，设置 textContent
     const bubble = document.createElement('div');
     bubble.className = 'bubble';
     bubble.textContent = text;
@@ -253,7 +255,7 @@ function addUserMessage(text) {
     scrollToBottom();
 }
 
-// TODO 5: 添加 AI 流式消息（返回 bubble 元素用于追加）
+// 添加 AI 流式消息（返回 bubble 元素用于追加）
 function addStreamingMessage() {
     if (welcome) welcome.style.display = 'none';
 
@@ -268,7 +270,7 @@ function addStreamingMessage() {
     return bubble;
 }
 
-// TODO 6: 核心 — 发送消息 + SSE 流式接收
+// 核心 — 发送消息 + SSE 流式接收
 async function sendMessage() {
     const question = userInput.value.trim();
     if (!question || isStreaming) return;
@@ -283,46 +285,51 @@ async function sendMessage() {
     const bubble = addStreamingMessage();
 
     try {
-        // TODO: fetch POST '/ask' 发送问题
-        // const response = await fetch('/ask', {
-        //     method: 'POST',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify({ question }),
-        // });
+        // 发送 POST 请求到 /ask
+        const response = await fetch('/ask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question }),
+        });
 
-        // TODO: 读取 SSE 流
-        // const reader = response.body.getReader();
-        // const decoder = new TextDecoder();
-        // let buffer = '';
-        // let fullText = '';
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
 
-        // while (true) {
-        //     const { done, value } = await reader.read();
-        //     if (done) break;
-        //     buffer += decoder.decode(value, { stream: true });
-        //     const lines = buffer.split('\n');
-        //     buffer = '';
-        //     for (const line of lines) {
-        //         if (line.startsWith('data:')) {
-        //             try {
-        //                 const data = JSON.parse(line.slice(5));
-        //                 if (data.text) {
-        //                     fullText += data.text;
-        //                     bubble.textContent = fullText;
-        //                     scrollToBottom();
-        //                 }
-        //                 if (data.done) break;
-        //             } catch(e) {}
-        //         }
-        //     }
-        // }
+        // 读取 SSE 流
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let fullText = '';
 
-        // 模拟回答（后端未启动时使用）
-        await new Promise(r => setTimeout(r, 1000));
-        bubble.textContent = `（后端未连接）你问的是: "${question}"\n启动后端后可以看到真实的流式回答`;
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';  // 保留不完整的行
+
+            for (const line of lines) {
+                if (line.startsWith('data:')) {
+                    try {
+                        const data = JSON.parse(line.slice(5));
+                        if (data.text) {
+                            fullText += data.text;
+                            bubble.textContent = fullText;
+                            scrollToBottom();
+                        }
+                        if (data.done) break;
+                    } catch(e) {
+                        // 解析失败，忽略
+                    }
+                }
+            }
+        }
 
     } catch (err) {
-        bubble.textContent = `请求失败: ${err.message}`;
+        // 后端未启动时使用模拟回答
+        await new Promise(r => setTimeout(r, 1000));
+        bubble.textContent = `（后端未连接）你问的是: "${question}"\n启动后端后可以看到真实的流式回答`;
     } finally {
         isStreaming = false;
         sendBtn.disabled = false;

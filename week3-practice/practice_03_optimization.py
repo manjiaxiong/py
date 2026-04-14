@@ -18,7 +18,6 @@ import chromadb
 
 # --- 题目 1: chunk_size 对比实验 ---
 
-# TODO 1.1: 实现 chunk_by_size 函数（和练习 1 一样）
 def chunk_by_size(text, chunk_size=300, overlap=50):
     """按固定字数分块，带重叠"""
     chunks = []
@@ -30,15 +29,50 @@ def chunk_by_size(text, chunk_size=300, overlap=50):
     return chunks
 
 
-# TODO 1.2: 对比实验
-# 用 200 / 500 / 1000 三种大小对同一文档分块
-# 分别建索引、检索同一个 query、对比距离值
-# 结论：哪个 chunk_size 检索结果距离最小（最相关）？
+# 对比实验：用不同 chunk_size 对同一文档分块，对比检索效果
+def run_chunk_experiment(doc_text, query="React Hooks 有哪些？"):
+    """
+    对比实验：200 / 500 / 1000 三种 chunk_size
+    分别建索引、检索同一个 query、对比距离值
+    """
+    results = {}
+
+    for size in [200, 500, 1000]:
+        # 分块
+        chunks = chunk_by_size(doc_text, chunk_size=size, overlap=50)
+
+        # 建索引
+        chroma = chromadb.Client()
+        col = chroma.create_collection(name=f"exp_{size}")
+        col.add(
+            documents=chunks,
+            ids=[f"chunk_{i}" for i in range(len(chunks))],
+            metadatas=[{"source": f"chunk_size_{size}"} for _ in chunks],
+        )
+
+        # 检索
+        search_result = col.query(query_texts=[query], n_results=3)
+        distances = search_result["distances"][0]
+
+        results[size] = {
+            "num_chunks": len(chunks),
+            "top_distance": distances[0] if distances else None,
+            "avg_distance": sum(distances) / len(distances) if distances else None,
+        }
+
+    print("=== 题目 1: chunk_size 对比实验 ===")
+    for size, res in results.items():
+        print(f"  chunk_size={size}: {res['num_chunks']} 个块, "
+              f"top距离={res['top_distance']:.4f}, "
+              f"平均={res['avg_distance']:.4f}")
+
+    best = min(results.items(), key=lambda x: x[1]["top_distance"] or float("inf"))
+    print(f"  结论: chunk_size={best[0]} 检索效果最好（距离最小）")
+    return results
 
 
 # --- 题目 2: 相似度阈值过滤 ---
 
-# TODO 2.1: 封装带阈值的 RAG 函数
 def rag_with_threshold(collection, query, client, model, n_results=3, threshold=1.5):
     """
     带阈值过滤的 RAG
@@ -48,57 +82,153 @@ def rag_with_threshold(collection, query, client, model, n_results=3, threshold=
     2. 过滤距离 >= threshold 的结果
     3. 如果没有通过阈值的，返回"文档中未找到相关信息"
     4. 否则拼接上下文，调 LLM 回答
-
-    JS 类比：
-    async function ragQuery(query, { nResults, threshold }) {
-        const results = await search(query, nResults);
-        const relevant = results.filter(r => r.distance < threshold);
-        if (relevant.length === 0) return "没有找到相关信息";
-        return await askAI(relevant, query);
-    }
     """
-    # TODO: 实现带阈值的 RAG
-    pass
+    results = collection.query(
+        query_texts=[query],
+        n_results=n_results,
+    )
+
+    docs = results["documents"][0]
+    metas = results["metadatas"][0]
+    dists = results["distances"][0]
+
+    # 过滤：L2 距离越小越相似，保留低于阈值的
+    relevant = [
+        (doc, meta, dist)
+        for doc, meta, dist in zip(docs, metas, dists)
+        if dist < threshold
+    ]
+
+    if not relevant:
+        return "文档中未找到相关信息，请尝试其他问题。"
+
+    # 拼接上下文
+    context = "\n\n---\n\n".join(doc for doc, _, _ in relevant)
+
+    prompt = f"""根据以下参考文档回答用户问题。
+如果文档中没有相关信息，请说"文档中未提及"。
+
+参考文档：
+{context}
+
+用户问题：{query}"""
+
+    return ask(client, model, prompt, max_tokens=800)
 
 
 # 测试
-# client_ai, MODEL = get_client(Path(__file__).parent / ".env")
-# chroma = chromadb.Client()
-# collection = chroma.create_collection(name="threshold_test")
-#
-# # 先索引一些文档
-# # TODO: 读 sample_docs 的文件，分块，存入 collection
-#
-# # 测试：文档中有的问题 vs 文档中没有的问题
-# questions = ["React 的 Hooks 有哪些？", "量子计算的原理是什么？"]
-# for q in questions:
-#     answer = rag_with_threshold(collection, q, client_ai, MODEL, threshold=1.5)
-#     print(f"Q: {q}")
-#     print(f"A: {answer}")
+if __name__ == "__main__":
+    # 先加载文档并建索引
+    doc_dir = Path(__file__).parent.parent / "week3-rag-and-fastapi" / "sample_docs"
+    all_docs = {}
+    for md_file in Path(doc_dir).glob("*.md"):
+        all_docs[md_file.name] = md_file.read_text(encoding="utf-8")
+
+    chroma_test = chromadb.Client()
+    col_test = chroma_test.create_collection(name="threshold_test")
+
+    # 分块
+    idx = 0
+    for name, content in all_docs.items():
+        paragraphs = content.split("\n\n")
+        current = ""
+        for para in paragraphs:
+            para = para.strip()
+            if not para:
+                continue
+            if len(current) + len(para) > 500 and current:
+                col_test.add(
+                    documents=[current],
+                    ids=[f"chunk_{idx}"],
+                    metadatas=[{"source": name}],
+                )
+                idx += 1
+                current = para
+            else:
+                current = current + "\n\n" + para if current else para
+        if current:
+            col_test.add(
+                documents=[current],
+                ids=[f"chunk_{idx}"],
+                metadatas=[{"source": name}],
+            )
+            idx += 1
+
+    client_ai, MODEL = get_client(Path(__file__).parent / ".env")
+
+    print("\n=== 题目 2: 带阈值的 RAG ===")
+    questions = ["React 的 Hooks 有哪些？", "量子计算的原理是什么？"]
+    for q in questions:
+        answer = rag_with_threshold(col_test, q, client_ai, MODEL, threshold=1.5)
+        print(f"Q: {q}")
+        print(f"A: {answer[:120]}...\n")
 
 
 # --- 题目 3: 引用来源 ---
 
-# TODO 3.1: 建索引时存入来源信息（source, chunk_index, preview）
-# TODO 3.2: 检索时返回来源列表
-# TODO 3.3: 让 AI 在回答末尾标注引用来源
-# prompt 模板中加上：回答末尾标注引用来源（文件名）
+def rag_with_citations(collection, query, client, model, n_results=3):
+    """
+    带引用来源的 RAG
+
+    返回: {answer, sources}
+    """
+    results = collection.query(
+        query_texts=[query],
+        n_results=n_results,
+    )
+
+    docs = results["documents"][0]
+    metas = results["metadatas"][0]
+    dists = results["distances"][0]
+
+    sources = []
+    context_parts = []
+    for i, (doc, meta, dist) in enumerate(zip(docs, metas, dists)):
+        source = meta.get("source", "unknown")
+        sources.append({
+            "source": source,
+            "preview": doc[:100] + "...",
+            "distance": round(dist, 4),
+        })
+        context_parts.append(f"[来源: {source}]\n{doc}")
+
+    context = "\n\n---\n\n".join(context_parts)
+
+    prompt = f"""根据以下参考文档回答用户问题。
+如果文档中没有相关信息，请说"文档中未提及"。
+回答末尾请标注引用来源（文件名）。
+
+参考文档：
+{context}
+
+用户问题：{query}"""
+
+    answer = ask(client, model, prompt, max_tokens=800)
+    return {"answer": answer, "sources": sources}
 
 
 # --- 题目 4: RAG 评估 ---
 
-# TODO 4.1: 定义评估集（至少 3 条 QA）
+# 定义评估集（至少 3 条 QA）
 eval_set = [
     {
-        "question": "___",
-        "expected_source": "___",
-        "expected_keywords": ["___"],
+        "question": "React 有哪些常用 Hooks？",
+        "expected_source": "react_basics.md",
+        "expected_keywords": ["useState", "useEffect"],
     },
-    # TODO: 再写 2+ 条
+    {
+        "question": "Python 的列表推导式怎么写？",
+        "expected_source": "python_tips.md",
+        "expected_keywords": ["列表", "推导"],
+    },
+    {
+        "question": "RESTful API 设计有什么规范？",
+        "expected_source": "api_design.md",
+        "expected_keywords": ["REST", "资源"],
+    },
 ]
 
 
-# TODO 4.2: 运行评估
 def run_eval(collection, client, model, eval_set, n_results=3):
     """
     运行 RAG 评估，分开评估检索和生成
@@ -116,7 +246,10 @@ def run_eval(collection, client, model, eval_set, n_results=3):
 
     for item in eval_set:
         # 检索
-        results = collection.query(query_texts=[item["question"]], n_results=n_results)
+        results = collection.query(
+            query_texts=[item["question"]],
+            n_results=n_results,
+        )
         retrieved_sources = [m["source"] for m in results["metadatas"][0]]
 
         # 检索评估：期望来源是否在 top-k 中
@@ -124,13 +257,30 @@ def run_eval(collection, client, model, eval_set, n_results=3):
         if retrieval_hit:
             retrieval_hits += 1
 
-        # TODO: 生成评估 — 调 LLM 回答，检查关键词命中
-        # generation_hit = ...
+        # 生成评估：调 LLM 回答，检查关键词命中
+        docs = results["documents"][0]
+        context = "\n\n".join(docs)
+        prompt = f"""根据以下参考文档回答用户问题。
+如果文档中没有相关信息，请说"文档中未提及"。
+
+参考文档：
+{context}
+
+用户问题：{item["question"]}"""
+
+        answer = ask(client, model, prompt, max_tokens=500)
+        matched_kws = [kw for kw in item["expected_keywords"] if kw.lower() in answer.lower()]
+        # 命中一半以上算通过
+        generation_hit = len(matched_kws) >= max(1, len(item["expected_keywords"]) // 2)
+        if generation_hit:
+            generation_hits += 1
 
         details.append({
             "question": item["question"],
             "retrieval_hit": retrieval_hit,
-            # TODO: 加 generation_hit
+            "generation_hit": generation_hit,
+            "matched_keywords": matched_kws,
+            "answer_preview": answer[:80] + "...",
         })
 
     total = len(eval_set)
@@ -141,22 +291,53 @@ def run_eval(collection, client, model, eval_set, n_results=3):
     }
 
 
-# TODO 4.3: 调用 run_eval 并打印结果
-# result = run_eval(collection, client_ai, MODEL, eval_set)
-# print(f"检索命中率: {result['retrieval_hit_rate']:.0%}")
-# print(f"生成通过率: {result['generation_pass_rate']:.0%}")
-# for d in result["details"]:
-#     print(f"  {d['question']}: 检索={'✅' if d['retrieval_hit'] else '❌'}")
+# 测试评估
+if __name__ == "__main__":
+    # 建索引
+    col_eval = chromadb.Client().create_collection(name="eval_test")
+    idx = 0
+    for name, content in all_docs.items():
+        paragraphs = content.split("\n\n")
+        current = ""
+        for para in paragraphs:
+            para = para.strip()
+            if not para:
+                continue
+            if len(current) + len(para) > 500 and current:
+                col_eval.add(
+                    documents=[current],
+                    ids=[f"e_{idx}"],
+                    metadatas=[{"source": name}],
+                )
+                idx += 1
+                current = para
+            else:
+                current = current + "\n\n" + para if current else para
+        if current:
+            col_eval.add(
+                documents=[current],
+                ids=[f"e_{idx}"],
+                metadatas=[{"source": name}],
+            )
+            idx += 1
+
+    print("\n=== 题目 4: RAG 评估 ===")
+    result = run_eval(col_eval, client_ai, MODEL, eval_set)
+    print(f"检索命中率: {result['retrieval_hit_rate']:.0%}")
+    print(f"生成通过率: {result['generation_pass_rate']:.0%}")
+    for d in result["details"]:
+        print(f"  {d['question']}: "
+              f"检索={'✅' if d['retrieval_hit'] else '❌'}, "
+              f"生成={'✅' if d['generation_hit'] else '❌'}")
 
 
 # --- 题目 5: 思考题 ---
 
-# TODO 5.1: 以下场景选择什么优化方案？
 # 场景 1：用户问了一个完全无关的问题，AI 基于不相关内容编造了答案
-# 方案：___
+# 方案：设置相似度阈值，低于阈值拒绝回答；在 prompt 中强调"如果文档中没有相关信息就说不知道"
 #
 # 场景 2：检索结果总是包含不相关的文档，回答质量差
-# 方案：___（从 chunk_size / top_k / rerank 中选）
+# 方案：减小 top_k（只取最相关的几条）、调整 chunk_size（让每个块更聚焦）、引入 Rerank 二次排序
 #
 # 场景 3：回答总是很简短，漏掉重要信息
-# 方案：___
+# 方案：增加 top_k（提供更多上下文）、优化 prompt 模板（要求"详细回答"）、增大 max_tokens
