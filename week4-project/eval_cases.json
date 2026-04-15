@@ -1,0 +1,58 @@
+[
+  {
+    "id": "case_001",
+    "task_description": "帮我查一下 Python 最新版本是什么",
+    "expected_tools": ["web_search"],
+    "expected_keywords": ["Python", "3.12"],
+    "tags": ["search", "simple"]
+  },
+  {
+    "id": "case_002",
+    "task_description": "计算 (100 + 50) * 2 等于多少",
+    "expected_tools": ["calculator"],
+    "expected_keywords": ["300"],
+    "tags": ["math", "simple"]
+  },
+  {
+    "id": "case_003",
+    "task_description": "帮我查一下 FastAPI 是什么，然后查一下 React 最新版本",
+    "expected_tools": ["web_search"],
+    "expected_keywords": ["FastAPI", "React"],
+    "tags": ["search", "multi_step"]
+  },
+  {
+    "id": "case_004",
+    "task_description": "搜索 RAG 技术，然后用一句话总结",
+    "expected_tools": ["web_search", "text_summarize"],
+    "expected_keywords": ["检索", "生成"],
+    "tags": ["search", "summarize"]
+  },
+  {
+    "id": "case_005",
+    "task_description": "查一下 Docker 是什么，再计算如果学 Docker 需要 5 天、学 K8s 需要 10 天，一共多少天",
+    "expected_tools": ["web_search", "calculator"],
+    "expected_keywords": ["Docker", "15"],
+    "tags": ["search", "math", "multi_step"]
+  },
+  {
+    "id": "case_006",
+    "task_description": "查一下 LangGraph 是什么框架",
+    "expected_tools": ["web_search"],
+    "expected_keywords": ["LangGraph", "图"],
+    "tags": ["search", "simple"]
+  },
+  {
+    "id": "case_007",
+    "task_description": "查一下 MCP 协议，再查一下 Agent 的概念",
+    "expected_tools": ["web_search"],
+    "expected_keywords": ["MCP", "Agent"],
+    "tags": ["search", "multi_step"]
+  },
+  {
+    "id": "case_008",
+    "task_description": "现在几点了",
+    "expected_tools": ["get_current_time"],
+    "expected_keywords": ["2026"],
+    "tags": ["time", "simple"]
+  }
+]

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Workflow Assistant</title>
+    <style>
+        :root {
+            --bg-primary: #f7f7f8;
+            --bg-secondary: #ffffff;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --text-primary: #1a1a2e;
+            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
+            --radius-md: 12px;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
+            --max-width: 800px;
+            --font-sans: -apple-system, BlinkMacSystemFont, "Noto Sans SC", sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 24px;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+        }
+        .header h1 { font-size: 20px; font-weight: 600; }
+        .header p { color: var(--text-secondary); font-size: 13px; margin-top: 4px; }
+
+        .container {
+            max-width: var(--max-width);
+            margin: 24px auto;
+            padding: 0 16px;
+        }
+
+        /* 输入区域 */
+        .input-card {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 24px;
+        }
+        .input-card label { font-weight: 600; font-size: 14px; display: block; margin-bottom: 8px; }
+        .input-card textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 12px;
+            border: 1.5px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: var(--font-sans);
+            resize: vertical;
+            outline: none;
+        }
+        .input-card textarea:focus { border-color: var(--accent); }
+
+        .input-row { display: flex; gap: 12px; align-items: center; margin-top: 12px; }
+        .input-row select {
+            padding: 10px 12px;
+            border: 1.5px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .submit-btn {
+            flex: 1;
+            padding: 12px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .submit-btn:hover:not(:disabled) { background: var(--accent-hover); }
+        .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* 步骤卡片 */
+        .steps-area { margin-top: 16px; }
+        .step-card {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow-sm);
+            border-left: 4px solid var(--border-color);
+        }
+        .step-card.running { border-left-color: var(--warning); }
+        .step-card.success { border-left-color: var(--success); }
+        .step-card.error { border-left-color: var(--error); }
+
+        .step-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .step-num { font-weight: 600; font-size: 13px; }
+        .step-tool { color: var(--text-secondary); font-size: 12px; }
+        .step-desc { font-size: 14px; margin-bottom: 6px; }
+        .step-output {
+            background: var(--bg-primary);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            white-space: pre-wrap;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        /* 最终结果 */
+        .result-card {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-top: 16px;
+            box-shadow: var(--shadow-md);
+            border-left: 4px solid var(--success);
+        }
+        .result-card h3 { font-size: 15px; margin-bottom: 8px; }
+        .result-content { font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+
+        /* 快捷任务 */
+        .quick-tasks { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .quick-btn {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .quick-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+        .loading { color: var(--warning); font-weight: 600; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>AI Workflow Assistant</h1>
+    <p>输入任务描述，AI 自动规划并执行多步骤工作流</p>
+</div>
+
+<div class="container">
+    <!-- 输入区域 -->
+    <div class="input-card">
+        <label>任务描述</label>
+        <textarea id="taskInput" placeholder="描述你的任务，例如：帮我查一下 Python 和 FastAPI 的关系，然后计算 3.14 * 100"></textarea>
+        <div class="quick-tasks">
+            <button class="quick-btn" onclick="setTask('帮我查一下 Python 最新版本，再计算 3.12 * 100')">Python 版本</button>
+            <button class="quick-btn" onclick="setTask('搜索 RAG 技术是什么，然后查一下 LangGraph 是什么')">RAG + LangGraph</button>
+            <button class="quick-btn" onclick="setTask('查一下 Docker 是什么，再查 FastAPI 部署方式')">Docker + 部署</button>
+        </div>
+        <div class="input-row">
+            <select id="maxSteps">
+                <option value="3">最多 3 步</option>
+                <option value="5" selected>最多 5 步</option>
+                <option value="8">最多 8 步</option>
+            </select>
+            <button class="submit-btn" id="submitBtn" onclick="submitTask()">提交任务</button>
+        </div>
+    </div>
+
+    <!-- 执行过程 -->
+    <div id="stepsArea" class="steps-area"></div>
+
+    <!-- 最终结果 -->
+    <div id="resultArea"></div>
+</div>
+
+<script>
+const taskInput = document.getElementById('taskInput');
+const submitBtn = document.getElementById('submitBtn');
+const stepsArea = document.getElementById('stepsArea');
+const resultArea = document.getElementById('resultArea');
+const maxStepsSelect = document.getElementById('maxSteps');
+
+function setTask(text) {
+    taskInput.value = text;
+}
+
+async function submitTask() {
+    const task = taskInput.value.trim();
+    if (!task) return;
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = '执行中...';
+    stepsArea.innerHTML = '<p class="loading">正在规划和执行任务...</p>';
+    resultArea.innerHTML = '';
+
+    try {
+        const res = await fetch('/api/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                task_description: task,
+                max_steps: parseInt(maxStepsSelect.value),
+            }),
+        });
+
+        const json = await res.json();
+
+        if (json.code !== 0) {
+            stepsArea.innerHTML = `<p style="color:var(--error)">错误: ${json.msg}</p>`;
+            return;
+        }
+
+        const data = json.data;
+        renderSteps(data.steps || []);
+        renderResult(data.final_result);
+
+    } catch (err) {
+        stepsArea.innerHTML = `<p style="color:var(--error)">请求失败: ${err.message}</p>`;
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '提交任务';
+    }
+}
+
+function renderSteps(steps) {
+    if (!steps.length) {
+        stepsArea.innerHTML = '<p>没有执行步骤</p>';
+        return;
+    }
+
+    stepsArea.innerHTML = steps.map(s => `
+        <div class="step-card ${s.status}">
+            <div class="step-header">
+                <span class="step-num">步骤 ${s.step_number}</span>
+                <span class="step-tool">${s.tool_used} (${s.latency_ms}ms)</span>
+            </div>
+            <div class="step-desc">${s.description}</div>
+            <div class="step-output">${escapeHtml(s.tool_output)}</div>
+        </div>
+    `).join('');
+}
+
+function renderResult(result) {
+    if (!result) return;
+    resultArea.innerHTML = `
+        <div class="result-card">
+            <h3>最终结果</h3>
+            <div class="result-content">${escapeHtml(result)}</div>
+        </div>
+    `;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+
+</body>
+</html>
