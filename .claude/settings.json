@@ -39,7 +39,15 @@
       "Bash(mkdir -p d:/code/py/week3-rag-and-fastapi/sample_docs)",
       "Bash(mkdir -p d:/code/py/week3-practice)",
       "Bash(mkdir -p d:/code/py/week3-project/templates)",
-      "Bash(mkdir -p d:/code/py/week3-project/docs)"
+      "Bash(mkdir -p d:/code/py/week3-project/docs)",
+      "Bash(python week3-rag-and-fastapi/gen_ppt.py)",
+      "Bash(mkdir -p d:/code/py/week4-agent-and-deploy)",
+      "Bash(mkdir -p d:/code/py/week4-practice)",
+      "Bash(mkdir -p d:/code/py/week4-project/templates)",
+      "Bash(cp d:/code/py/week3-practice/.env d:/code/py/week4-agent-and-deploy/.env)",
+      "Bash(cp d:/code/py/week3-practice/.env d:/code/py/week4-practice/.env)",
+      "Bash(cp d:/code/py/week3-practice/.env d:/code/py/week4-project/.env)",
+      "Bash(python week4-agent-and-deploy/gen_ppt.py)"
     ],
     "additionalDirectories": [
       "d:\\code\\py\\week1-python-ai-basics",
